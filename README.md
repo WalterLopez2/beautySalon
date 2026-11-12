@@ -24,6 +24,15 @@ Una aplicación web con dos partes:
 - Historial por clienta
 - Resumen de ingresos por día y por semana
 
+## Clientes en la base de datos
+
+El backend define la clase `Cliente` y el `RepositorioClientes` en
+`server/src/clientes.ts`. El repositorio incluye `crearTabla`, `crear`,
+`obtenerPorId`, `listar`, `buscarPorTelefono`, `actualizar` y `eliminar`.
+Nombre y teléfono son obligatorios; el correo es opcional. Antes de usar el
+repositorio, se debe proporcionar una conexión PostgreSQL y ejecutar
+`crearTabla()` una vez para crear la tabla `clientes`.
+
 ## Tecnologías
 
 - **Frontend:** React + TypeScript (Vite)

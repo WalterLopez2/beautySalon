@@ -51,7 +51,7 @@ function leerSecretoDeTokens(entorno: Entorno): string {
 function leerObligatoria(entorno: Entorno, nombre: string): string {
   const valor = entorno[nombre]?.trim();
   if (!valor) {
-    throw new Error(`Falta la variable de entorno ${nombre}. Revisa tu archivo server/.env.`);
+    throw new Error(`Falta la variable de entorno ${nombre}. Revisa tu archivo backend/.env.`);
   }
   return valor;
 }

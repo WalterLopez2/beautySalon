@@ -4,9 +4,11 @@
   "private": true,
   "description": "Sistema de gestion de citas para un salon de belleza",
   "scripts": {
-    "test": "pnpm --filter server test",
-    "dev:server": "pnpm --filter server dev",
-    "dev:client": "pnpm --filter client dev"
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "db:preparar": "pnpm --filter backend db:preparar",
+    "crear-duena": "pnpm --filter backend crear-duena",
+    "test": "pnpm --filter backend test"
   },
   "license": "ISC"
 }

@@ -1,5 +1,5 @@
 packages:
-  - client
-  - server
+  - frontend
+  - backend
 allowBuilds:
   esbuild: false

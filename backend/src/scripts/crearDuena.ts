@@ -3,7 +3,7 @@
 // La contrasena se pasa por variable de entorno y NO como argumento, para que
 // no quede guardada en el historial de la terminal:
 //
-//   DUENA_CONTRASENA="..." pnpm --filter server crear-duena delmy "Delmy"
+//   DUENA_CONTRASENA="..." pnpm crear-duena delmy "Delmy"
 
 import pg from 'pg';
 import { BaseDeDatosPostgres } from '../compartido/baseDeDatos/baseDeDatos';

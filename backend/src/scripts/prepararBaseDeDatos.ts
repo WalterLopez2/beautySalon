@@ -1,7 +1,7 @@
 // Crea las tablas que falten. No carga datos: servicios, horario y demas los
 // configura la duena desde el panel. Se puede correr las veces que haga falta.
 //
-//   pnpm --filter server db:preparar
+//   pnpm db:preparar
 
 import pg from 'pg';
 import { BaseDeDatosPostgres } from '../compartido/baseDeDatos/baseDeDatos';

@@ -6,7 +6,8 @@ on:
   pull_request:
 
 jobs:
-  test:
+  backend:
+    name: Backend (pruebas)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,4 +19,22 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Las pruebas usan dobles: no necesitan PostgreSQL.
       - run: pnpm test
+
+  frontend:
+    name: Frontend (tipos, lint y build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # `build` ya incluye la revision de tipos (tsc -b) antes de empaquetar.
+      - run: pnpm --filter frontend lint
+      - run: pnpm --filter frontend build

@@ -1,4 +1,4 @@
-// Carga `server/.env` si existe (en produccion las variables vienen del
+// Carga `backend/.env` si existe (en produccion las variables vienen del
 // hosting y el archivo no esta). Usa la funcion nativa de Node, sin dotenv.
 
 import { existsSync } from 'node:fs';

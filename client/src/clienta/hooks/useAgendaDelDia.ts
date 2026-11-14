@@ -17,6 +17,8 @@ interface AgendaCargada {
 
 interface DisponibilidadEnPantalla {
   horasDisponibles: string[]
+  // false = ese dia el salon no atiende: la vista lo dice en vez de "sin horas".
+  salonAbierto: boolean
   cargando: boolean
   error: string | null
 }
@@ -65,5 +67,5 @@ export function useAgendaDelDia(
         )
       : []
 
-  return { horasDisponibles, cargando, error }
+  return { horasDisponibles, salonAbierto: agenda?.estaAbierto() ?? true, cargando, error }
 }

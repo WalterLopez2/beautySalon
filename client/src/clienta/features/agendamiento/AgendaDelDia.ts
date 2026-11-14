@@ -1,11 +1,12 @@
 // Agenda de un dia: sabe que franjas estan ocupadas y calcula en que horas
-// cabe un servicio. El backend valida de nuevo al guardar; esto es para que la
-// clienta solo vea horas posibles.
+// cabe un servicio. El horario NO esta en el codigo: llega del servidor, tal
+// como lo configuro la duena en el panel. El backend valida de nuevo al
+// guardar; esto es para que la clienta solo vea horas posibles.
 
+import { Franja } from '../../../compartido/dominio/Franja.ts'
 import type { AgendaDelDiaDTO } from '../../../compartido/tipos/api.ts'
 import { esFechaValida } from '../../../compartido/utils/fecha.ts'
 import { horaAMinutos, minutosAHora } from '../../../compartido/utils/hora.ts'
-import { Franja } from '../../../compartido/dominio/Franja.ts'
 
 export interface HorarioDeAtencion {
   apertura: string // HH:MM
@@ -13,26 +14,17 @@ export interface HorarioDeAtencion {
   intervaloMin: number // cada cuanto se ofrece una hora de inicio
 }
 
-export const HORARIO_DEL_SALON: HorarioDeAtencion = {
-  apertura: '09:00',
-  cierre: '18:00',
-  intervaloMin: 30,
-}
-
 export class AgendaDelDia {
   readonly fecha: string
   private readonly ocupadas: readonly Franja[]
-  private readonly horario: HorarioDeAtencion
+  // null = ese dia el salon no atiende (o aun no configuro su horario).
+  private readonly horario: HorarioDeAtencion | null
 
-  constructor(
-    fecha: string,
-    ocupadas: readonly Franja[],
-    horario: HorarioDeAtencion = HORARIO_DEL_SALON,
-  ) {
+  constructor(fecha: string, ocupadas: readonly Franja[], horario: HorarioDeAtencion | null) {
     if (!esFechaValida(fecha)) {
       throw new Error(`La fecha "${fecha}" debe tener el formato YYYY-MM-DD.`)
     }
-    if (horaAMinutos(horario.apertura) >= horaAMinutos(horario.cierre)) {
+    if (horario && horaAMinutos(horario.apertura) >= horaAMinutos(horario.cierre)) {
       throw new Error('La hora de apertura debe ser anterior a la de cierre.')
     }
 
@@ -41,18 +33,29 @@ export class AgendaDelDia {
     this.horario = horario
   }
 
-  static desdeDTO(dto: AgendaDelDiaDTO, horario?: HorarioDeAtencion): AgendaDelDia {
+  static desdeDTO(dto: AgendaDelDiaDTO): AgendaDelDia {
     const ocupadas = dto.ocupadas.map((franja) => new Franja(franja.inicio, franja.duracionMin))
-    return new AgendaDelDia(dto.fecha, ocupadas, horario)
+    return new AgendaDelDia(dto.fecha, ocupadas, horarioDelDTO(dto))
+  }
+
+  estaAbierto(): boolean {
+    return this.horario !== null
   }
 
   estaDisponible(franja: Franja): boolean {
-    return this.cabeEnElHorario(franja) && !this.ocupadas.some((o) => o.seCruzaCon(franja))
+    if (!this.horario) return false
+    return (
+      this.cabeEnElHorario(franja, this.horario) &&
+      this.coincideConUnTurno(franja, this.horario) &&
+      !this.ocupadas.some((ocupada) => ocupada.seCruzaCon(franja))
+    )
   }
 
   // Todas las franjas donde cabe un servicio de esa duracion.
   // `apartirDe` sirve para no ofrecer horas ya pasadas cuando la fecha es hoy.
-  franjasDisponiblesPara(duracionMin: number, apartirDe = this.horario.apertura): Franja[] {
+  franjasDisponiblesPara(duracionMin: number, apartirDe?: string): Franja[] {
+    if (!this.horario) return []
+
     const disponibles: Franja[] = []
     const ultimoInicio = horaAMinutos(this.horario.cierre) - duracionMin
 
@@ -62,7 +65,8 @@ export class AgendaDelDia {
       minuto += this.horario.intervaloMin
     ) {
       const franja = new Franja(minutosAHora(minuto), duracionMin)
-      if (!franja.empiezaAntesDe(apartirDe) && this.estaDisponible(franja)) {
+      const yaPaso = apartirDe !== undefined && franja.empiezaAntesDe(apartirDe)
+      if (!yaPaso && this.estaDisponible(franja)) {
         disponibles.push(franja)
       }
     }
@@ -77,10 +81,20 @@ export class AgendaDelDia {
     return this.franjasDisponiblesPara(duracionMin, apartirDe).length === 0
   }
 
-  private cabeEnElHorario(franja: Franja): boolean {
+  private cabeEnElHorario(franja: Franja, horario: HorarioDeAtencion): boolean {
     return (
-      franja.inicioEnMinutos() >= horaAMinutos(this.horario.apertura) &&
-      franja.finEnMinutos() <= horaAMinutos(this.horario.cierre)
+      franja.inicioEnMinutos() >= horaAMinutos(horario.apertura) &&
+      franja.finEnMinutos() <= horaAMinutos(horario.cierre)
     )
   }
+
+  // Misma regla que el backend: las citas empiezan en los turnos del salon.
+  private coincideConUnTurno(franja: Franja, horario: HorarioDeAtencion): boolean {
+    return (franja.inicioEnMinutos() - horaAMinutos(horario.apertura)) % horario.intervaloMin === 0
+  }
+}
+
+function horarioDelDTO(dto: AgendaDelDiaDTO): HorarioDeAtencion | null {
+  if (!dto.abierto || !dto.apertura || !dto.cierre || !dto.intervaloMin) return null
+  return { apertura: dto.apertura, cierre: dto.cierre, intervaloMin: dto.intervaloMin }
 }

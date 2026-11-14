@@ -34,3 +34,15 @@ export class Conflicto extends Error {
     this.name = 'Conflicto';
   }
 }
+
+// Demasiados intentos en poco tiempo (login, agendar). Se responde 429 y se
+// indica cuanto esperar, sin decir cuantos intentos quedaban.
+export class DemasiadosIntentos extends Error {
+  readonly segundosParaReintentar: number;
+
+  constructor(segundosParaReintentar: number) {
+    super('Hiciste demasiados intentos. Espera un momento antes de volver a intentar.');
+    this.name = 'DemasiadosIntentos';
+    this.segundosParaReintentar = segundosParaReintentar;
+  }
+}

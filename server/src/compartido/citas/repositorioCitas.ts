@@ -36,6 +36,7 @@ export interface NuevaCita {
   inicioMin: number;
   duracionMin: number;
   precio: number;
+  codigoHash: string; // hash del codigo de consulta que recibe la clienta
 }
 
 interface FilaCita {
@@ -87,6 +88,7 @@ export class RepositorioCitas {
         precio NUMERIC(10, 2) NOT NULL CHECK (precio >= 0),
         estado VARCHAR(12) NOT NULL DEFAULT 'pendiente'
           CHECK (estado IN ('pendiente', 'confirmada', 'atendida', 'cancelada')),
+        codigo_hash CHAR(64) NOT NULL,
         creada_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
@@ -114,10 +116,10 @@ export class RepositorioCitas {
 
   async crear(cita: NuevaCita): Promise<CitaRegistrada> {
     const resultado = await this.baseDeDatos.query<{ id: number }>(
-      `INSERT INTO citas (cliente_id, servicio_id, fecha, inicio_min, duracion_min, precio)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO citas (cliente_id, servicio_id, fecha, inicio_min, duracion_min, precio, codigo_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id`,
-      [cita.clienteId, cita.servicioId, cita.fecha, cita.inicioMin, cita.duracionMin, cita.precio],
+      [cita.clienteId, cita.servicioId, cita.fecha, cita.inicioMin, cita.duracionMin, cita.precio, cita.codigoHash],
     );
     const creada = await this.obtenerPorId(resultado.rows[0].id);
     if (!creada) {
@@ -132,8 +134,26 @@ export class RepositorioCitas {
     return fila ? aCitaRegistrada(fila) : null;
   }
 
-  async listarPorTelefono(telefono: string): Promise<CitaRegistrada[]> {
-    return this.listarDonde('cl.telefono = $1', [telefono]);
+  // Historial de la clienta, solo si el codigo coincide con alguna de SUS
+  // citas. Con un telefono ajeno o un codigo inventado devuelve [], igual que
+  // si no tuviera citas: no revela si el telefono existe.
+  async listarPorTelefonoYCodigo(telefono: string, codigoHash: string): Promise<CitaRegistrada[]> {
+    return this.listarDonde(
+      `cl.telefono = $1 AND EXISTS (
+         SELECT 1 FROM citas propia WHERE propia.cliente_id = cl.id AND propia.codigo_hash = $2
+       )`,
+      [telefono, codigoHash],
+    );
+  }
+
+  // Citas que la clienta todavia tiene por delante (para limitar reservas).
+  async contarVigentesPorTelefono(telefono: string, desdeFecha: string): Promise<number> {
+    const resultado = await this.baseDeDatos.query<{ cantidad: string }>(
+      `SELECT COUNT(*) AS cantidad FROM citas c JOIN clientes cl ON cl.id = c.cliente_id
+       WHERE cl.telefono = $1 AND c.fecha >= $2 AND c.estado IN ('pendiente', 'confirmada')`,
+      [telefono, desdeFecha],
+    );
+    return Number(resultado.rows[0].cantidad);
   }
 
   async listarPorCliente(clienteId: number): Promise<CitaRegistrada[]> {

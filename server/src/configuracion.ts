@@ -9,6 +9,8 @@ export interface Configuracion {
   baseDeDatos: PoolConfig;
   secretoDeTokens: string;
   duracionDeSesionMs: number;
+  proxiesDeConfianza: number; // 0 en tu computadora; 1 o mas detras de un hosting
+  soloHttps: boolean;
 }
 
 type Entorno = Record<string, string | undefined>;
@@ -22,6 +24,8 @@ export function leerConfiguracion(entorno: Entorno = process.env): Configuracion
     baseDeDatos: leerConfiguracionDeBaseDeDatos(entorno),
     secretoDeTokens: leerSecretoDeTokens(entorno),
     duracionDeSesionMs: leerNumero(entorno, 'DURACION_SESION_HORAS', 12) * MILISEGUNDOS_POR_HORA,
+    proxiesDeConfianza: leerEnteroNoNegativo(entorno, 'PROXIES_DE_CONFIANZA', 0),
+    soloHttps: entorno.SOLO_HTTPS === 'true',
   };
 }
 
@@ -59,6 +63,17 @@ function leerNumero(entorno: Entorno, nombre: string, porDefecto: number): numbe
   const valor = Number(crudo);
   if (!Number.isFinite(valor) || valor <= 0) {
     throw new Error(`La variable de entorno ${nombre} debe ser un numero positivo.`);
+  }
+  return valor;
+}
+
+function leerEnteroNoNegativo(entorno: Entorno, nombre: string, porDefecto: number): number {
+  const crudo = entorno[nombre]?.trim();
+  if (!crudo) return porDefecto;
+
+  const valor = Number(crudo);
+  if (!Number.isInteger(valor) || valor < 0) {
+    throw new Error(`La variable de entorno ${nombre} debe ser un entero igual o mayor a cero.`);
   }
   return valor;
 }

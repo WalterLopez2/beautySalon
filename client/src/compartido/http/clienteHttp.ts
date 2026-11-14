@@ -35,11 +35,20 @@ export interface Http {
   obtener<T>(ruta: string): Promise<T>
   publicar<T>(ruta: string, cuerpo: unknown): Promise<T>
   actualizar<T>(ruta: string, cuerpo: unknown): Promise<T>
+  reemplazar<T>(ruta: string, cuerpo: unknown): Promise<T>
+  eliminar(ruta: string): Promise<void>
 }
 
 // Quien sabe el token de la sesion actual. Las rutas publicas funcionan igual
 // cuando devuelve null.
 export type ProveedorDeToken = () => string | null
+
+// Se llama cuando el servidor rechaza un token que SI se envio (vencido,
+// revocado o falso), para que la app cierre la sesion local y vuelva al login.
+export type AlPerderLaSesion = () => void
+
+const SIN_CONTENIDO = 204
+const NO_AUTORIZADO = 401
 
 interface ErrorDelServidor {
   mensaje?: string
@@ -49,10 +58,16 @@ interface ErrorDelServidor {
 export class ClienteHttp implements Http {
   private readonly urlBase: string
   private readonly token: ProveedorDeToken
+  private readonly alPerderLaSesion: AlPerderLaSesion
 
-  constructor(urlBase: string, token: ProveedorDeToken = () => null) {
+  constructor(
+    urlBase: string,
+    token: ProveedorDeToken = () => null,
+    alPerderLaSesion: AlPerderLaSesion = () => {},
+  ) {
     this.urlBase = urlBase.replace(/\/$/, '')
     this.token = token
+    this.alPerderLaSesion = alPerderLaSesion
   }
 
   obtener<T>(ruta: string): Promise<T> {
@@ -63,26 +78,34 @@ export class ClienteHttp implements Http {
     return this.pedir<T>(ruta, conCuerpoJson('POST', cuerpo))
   }
 
+  // PATCH: cambia una parte (por ejemplo, solo el estado de una cita).
   actualizar<T>(ruta: string, cuerpo: unknown): Promise<T> {
     return this.pedir<T>(ruta, conCuerpoJson('PATCH', cuerpo))
   }
 
-  private async pedir<T>(ruta: string, opciones: RequestInit): Promise<T> {
-    const respuesta = await this.enviar(ruta, this.autenticar(opciones))
+  // PUT: reemplaza el recurso completo (por ejemplo, todo el horario).
+  reemplazar<T>(ruta: string, cuerpo: unknown): Promise<T> {
+    return this.pedir<T>(ruta, conCuerpoJson('PUT', cuerpo))
+  }
 
+  async eliminar(ruta: string): Promise<void> {
+    await this.pedir<void>(ruta, { method: 'DELETE' })
+  }
+
+  private async pedir<T>(ruta: string, opciones: RequestInit): Promise<T> {
+    const token = this.token()
+    const respuesta = await this.enviar(ruta, conToken(opciones, token))
+
+    // Un 401 sin token es un login fallido, no una sesion perdida.
+    if (respuesta.status === NO_AUTORIZADO && token) {
+      this.alPerderLaSesion()
+    }
     if (!respuesta.ok) {
       throw new ErrorDeApi(await this.leerMensajeDeError(respuesta), respuesta.status)
     }
+    // 204 = todo bien, sin cuerpo (por ejemplo, al eliminar).
+    if (respuesta.status === SIN_CONTENIDO) return undefined as T
     return (await respuesta.json()) as T
-  }
-
-  private autenticar(opciones: RequestInit): RequestInit {
-    const token = this.token()
-    if (!token) return opciones
-
-    const headers = new Headers(opciones.headers)
-    headers.set('Authorization', `Bearer ${token}`)
-    return { ...opciones, headers }
   }
 
   private async enviar(ruta: string, opciones: RequestInit): Promise<Response> {
@@ -103,10 +126,18 @@ export class ClienteHttp implements Http {
   }
 }
 
-function conCuerpoJson(method: 'POST' | 'PATCH', cuerpo: unknown): RequestInit {
+function conCuerpoJson(method: 'POST' | 'PATCH' | 'PUT', cuerpo: unknown): RequestInit {
   return {
     method,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(cuerpo),
   }
+}
+
+function conToken(opciones: RequestInit, token: string | null): RequestInit {
+  if (!token) return opciones
+
+  const headers = new Headers(opciones.headers)
+  headers.set('Authorization', `Bearer ${token}`)
+  return { ...opciones, headers }
 }

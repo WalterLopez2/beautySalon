@@ -3,7 +3,7 @@
 // mensaje claro. Asi las rutas no repiten validaciones ni usan `any`.
 
 import { esEstadoCita, type EstadoCita } from '../dominio/citas';
-import { esFechaValida, esHoraValida } from '../dominio/fechas';
+import { diasEntre, esFechaValida, esHoraValida } from '../dominio/fechas';
 import { DatosInvalidos } from '../errores';
 
 export type Objeto = Record<string, unknown>;
@@ -82,4 +82,60 @@ export function leerEstadoCita(valor: unknown): EstadoCita {
     throw new DatosInvalidos(['El estado debe ser pendiente, confirmada, atendida o cancelada.']);
   }
   return valor;
+}
+
+export function leerEnteroPositivo(valor: unknown, campo: string): number {
+  if (typeof valor !== 'number' || !Number.isInteger(valor) || valor <= 0) {
+    throw new DatosInvalidos([`El campo "${campo}" debe ser un numero entero mayor a cero.`]);
+  }
+  return valor;
+}
+
+export function leerMonto(valor: unknown, campo: string): number {
+  if (typeof valor !== 'number' || !Number.isFinite(valor) || valor < 0) {
+    throw new DatosInvalidos([`El campo "${campo}" debe ser un monto igual o mayor a cero.`]);
+  }
+  return Math.round(valor * 100) / 100; // centavos, como guarda NUMERIC(10, 2)
+}
+
+export function leerBooleano(valor: unknown, campo: string): boolean {
+  if (typeof valor !== 'boolean') {
+    throw new DatosInvalidos([`El campo "${campo}" debe ser verdadero o falso.`]);
+  }
+  return valor;
+}
+
+export function leerLista(valor: unknown, campo: string): unknown[] {
+  if (!Array.isArray(valor)) {
+    throw new DatosInvalidos([`El campo "${campo}" debe ser una lista.`]);
+  }
+  return valor;
+}
+
+export function leerHoraOpcional(valor: unknown, campo: string): string | null {
+  if (valor === undefined || valor === null || valor === '') return null;
+  return leerHora(valor, campo);
+}
+
+export interface RangoDeFechas {
+  desde: string;
+  hasta: string;
+}
+
+// Rango cerrado [desde, hasta] con un tope de dias, para que nadie pida por
+// error (o a proposito) anos enteros de datos en una sola consulta.
+export function leerRangoDeFechas(desdeCrudo: unknown, hastaCrudo: unknown, diasMaximos: number): RangoDeFechas {
+  const { desde, hasta } = leerCampos<RangoDeFechas>({
+    desde: () => leerFecha(desdeCrudo, 'desde'),
+    hasta: () => leerFecha(hastaCrudo, 'hasta'),
+  });
+  const dias = diasEntre(desde, hasta);
+
+  if (dias < 0) {
+    throw new DatosInvalidos(['La fecha "desde" debe ser anterior o igual a "hasta".']);
+  }
+  if (dias > diasMaximos) {
+    throw new DatosInvalidos([`Solo se pueden consultar hasta ${diasMaximos} dias a la vez.`]);
+  }
+  return { desde, hasta };
 }

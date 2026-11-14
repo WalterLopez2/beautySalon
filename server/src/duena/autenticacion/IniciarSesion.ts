@@ -1,10 +1,13 @@
 // Caso de uso: la duena entra al panel con usuario y contrasena.
 //
-// El mensaje de error es el mismo si el usuario no existe o si la contrasena
-// esta mal, y en ambos casos se hace el mismo trabajo de scrypt. Asi nadie
-// puede averiguar que usuarios existen por el mensaje ni por el tiempo.
+// - El mensaje de error es el mismo si el usuario no existe o si la
+//   contrasena esta mal, y en ambos casos se hace el mismo trabajo de scrypt:
+//   nadie puede averiguar que usuarios existen por el mensaje ni por el tiempo.
+// - Tras varios fallos se bloquea un rato (por usuario+IP y por IP), para que
+//   no se puedan probar miles de contrasenas.
 
 import { NoAutorizado } from '../../compartido/errores';
+import type { LimitadorDeIntentos } from '../../compartido/seguridad/LimitadorDeIntentos';
 import { cifrarContrasena, verificarContrasena } from './contrasenas';
 import type { Usuaria } from './repositorioUsuarias';
 import type { EmisorDeTokens } from './tokens';
@@ -20,32 +23,44 @@ export interface SesionIniciada {
   expiraEn: string; // ISO 8601, como lo espera el frontend
 }
 
-export interface BuscadorDeUsuarias {
-  buscarPorUsuario(usuario: string): Promise<Usuaria | null>;
+export interface DependenciasDeIniciarSesion {
+  usuarias: { buscarPorUsuario(usuario: string): Promise<Usuaria | null> };
+  tokens: EmisorDeTokens;
+  limites: {
+    porUsuario: LimitadorDeIntentos;
+    porIp: LimitadorDeIntentos;
+  };
 }
 
 const CREDENCIALES_INCORRECTAS = 'Usuario o contrasena incorrectos.';
 
 export class IniciarSesion {
-  private readonly usuarias: BuscadorDeUsuarias;
-  private readonly tokens: EmisorDeTokens;
+  private readonly dependencias: DependenciasDeIniciarSesion;
   private hashDeRelleno: Promise<string> | null = null;
 
-  constructor(usuarias: BuscadorDeUsuarias, tokens: EmisorDeTokens) {
-    this.usuarias = usuarias;
-    this.tokens = tokens;
+  constructor(dependencias: DependenciasDeIniciarSesion) {
+    this.dependencias = dependencias;
   }
 
-  async ejecutar({ usuario, contrasena }: Credenciales): Promise<SesionIniciada> {
-    const usuaria = await this.usuarias.buscarPorUsuario(usuario);
+  // `ip` identifica de donde viene el intento, para los limites.
+  async ejecutar({ usuario, contrasena }: Credenciales, ip: string): Promise<SesionIniciada> {
+    const { usuarias, tokens, limites } = this.dependencias;
+    const claveDeUsuario = `${usuario.trim().toLowerCase()}|${ip}`;
+    limites.porIp.exigirDisponible(ip);
+    limites.porUsuario.exigirDisponible(claveDeUsuario);
+
+    const usuaria = await usuarias.buscarPorUsuario(usuario);
     const hash = usuaria?.hashContrasena ?? (await this.obtenerHashDeRelleno());
     const contrasenaCorrecta = await verificarContrasena(contrasena, hash);
 
     if (!usuaria || !contrasenaCorrecta) {
+      limites.porIp.registrar(ip);
+      limites.porUsuario.registrar(claveDeUsuario);
       throw new NoAutorizado(CREDENCIALES_INCORRECTAS);
     }
 
-    const { token, expiraEn } = this.tokens.emitir(usuaria.id, usuaria.nombre);
+    limites.porUsuario.reiniciar(claveDeUsuario);
+    const { token, expiraEn } = tokens.emitir(usuaria.id, usuaria.nombre, usuaria.versionSesion);
     return { token, nombre: usuaria.nombre, expiraEn: expiraEn.toISOString() };
   }
 

@@ -8,6 +8,9 @@ import { NoAutorizado } from '../../compartido/errores';
 export interface SesionDeDuena {
   usuariaId: number;
   nombre: string;
+  // Debe coincidir con la version guardada de la usuaria. Al cerrar sesion o
+  // cambiar la contrasena la version sube y este token deja de servir.
+  version: number;
   expiraEn: number; // milisegundos desde 1970 (Date.now())
 }
 
@@ -29,8 +32,8 @@ export class EmisorDeTokens {
     this.ahora = ahora;
   }
 
-  emitir(usuariaId: number, nombre: string): TokenEmitido {
-    const sesion: SesionDeDuena = { usuariaId, nombre, expiraEn: this.ahora() + this.duracionMs };
+  emitir(usuariaId: number, nombre: string, version: number): TokenEmitido {
+    const sesion: SesionDeDuena = { usuariaId, nombre, version, expiraEn: this.ahora() + this.duracionMs };
     const contenido = Buffer.from(JSON.stringify(sesion)).toString('base64url');
     return { token: `${contenido}.${this.firmar(contenido)}`, expiraEn: new Date(sesion.expiraEn) };
   }
@@ -65,6 +68,7 @@ function leerSesion(contenido: string): SesionDeDuena | null {
     const esValida =
       typeof sesion.usuariaId === 'number' &&
       typeof sesion.nombre === 'string' &&
+      typeof sesion.version === 'number' &&
       typeof sesion.expiraEn === 'number';
     return esValida ? (sesion as SesionDeDuena) : null;
   } catch {

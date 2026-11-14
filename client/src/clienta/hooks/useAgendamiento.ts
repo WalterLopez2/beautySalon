@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import type { AgendarCita } from '../features/agendamiento/AgendarCita.ts'
-import type { Cita } from '../../compartido/dominio/Cita.ts'
+import type { CitaAgendada } from '../features/agendamiento/repositorioCitas.ts'
 import { SolicitudDeCita } from '../features/agendamiento/SolicitudDeCita.ts'
 import type { ContactoDTO } from '../../compartido/tipos/api.ts'
 import type { Servicio } from '../../compartido/dominio/Servicio.ts'
@@ -12,7 +12,8 @@ import { erroresDeError } from '../../compartido/utils/errores.ts'
 
 interface Agendamiento {
   solicitud: SolicitudDeCita
-  citaConfirmada: Cita | null
+  // Incluye el codigo de consulta: la vista debe mostrarlo y pedir que lo guarde.
+  citaConfirmada: CitaAgendada | null
   enviando: boolean
   errores: string[]
   elegirServicio: (servicio: Servicio) => void
@@ -27,7 +28,7 @@ export function useAgendamiento(
   caso: AgendarCita = contenedor.agendarCita,
 ): Agendamiento {
   const [solicitud, setSolicitud] = useState(SolicitudDeCita.vacia())
-  const [citaConfirmada, setCitaConfirmada] = useState<Cita | null>(null)
+  const [citaConfirmada, setCitaConfirmada] = useState<CitaAgendada | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [errores, setErrores] = useState<string[]>([])
 

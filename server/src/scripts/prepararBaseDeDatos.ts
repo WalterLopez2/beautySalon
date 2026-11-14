@@ -1,17 +1,18 @@
-// Crea las tablas (si no existen) y carga el catalogo inicial de servicios.
-// Se puede correr las veces que haga falta: no borra ni duplica datos.
+// Crea las tablas que falten. No carga datos: servicios, horario y demas los
+// configura la duena desde el panel. Se puede correr las veces que haga falta.
 //
 //   pnpm --filter server db:preparar
 
 import pg from 'pg';
 import { BaseDeDatosPostgres } from '../compartido/baseDeDatos/baseDeDatos';
+import { RepositorioBloqueos } from '../compartido/bloqueos/repositorioBloqueos';
 import { RepositorioCitas } from '../compartido/citas/repositorioCitas';
 import { RepositorioClientes } from '../compartido/clientes/repositorioClientes';
 import { cargarArchivoEnv } from '../compartido/entorno';
+import { RepositorioHorario } from '../compartido/horario/repositorioHorario';
 import { RepositorioServicios } from '../compartido/servicios/repositorioServicios';
 import { leerConfiguracionDeBaseDeDatos } from '../configuracion';
 import { RepositorioUsuarias } from '../duena/autenticacion/repositorioUsuarias';
-import { CATALOGO_INICIAL } from './catalogoInicial';
 
 async function prepararBaseDeDatos(): Promise<void> {
   cargarArchivoEnv();
@@ -19,19 +20,15 @@ async function prepararBaseDeDatos(): Promise<void> {
 
   try {
     await baseDeDatos.transaccion(async (consultor) => {
-      const servicios = new RepositorioServicios(consultor);
-
       // El orden importa: `citas` apunta a `clientes` y `servicios`.
       await new RepositorioClientes(consultor).crearTabla();
-      await servicios.crearTabla();
+      await new RepositorioServicios(consultor).crearTabla();
       await new RepositorioCitas(consultor).crearTabla();
+      await new RepositorioHorario(consultor).crearTablas();
+      await new RepositorioBloqueos(consultor).crearTabla();
       await new RepositorioUsuarias(consultor).crearTabla();
-
-      for (const servicio of CATALOGO_INICIAL) {
-        await servicios.guardar(servicio);
-      }
     });
-    console.log(`Base de datos lista. Servicios cargados: ${CATALOGO_INICIAL.length}.`);
+    console.log('Base de datos lista.');
   } finally {
     await baseDeDatos.cerrar();
   }

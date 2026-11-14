@@ -4,7 +4,7 @@
 // usuario (podrian filtrar detalles internos o de la base de datos).
 
 import type { ErrorRequestHandler, RequestHandler } from 'express';
-import { Conflicto, DatosInvalidos, NoAutorizado, NoEncontrado } from '../errores';
+import { Conflicto, DatosInvalidos, DemasiadosIntentos, NoAutorizado, NoEncontrado } from '../errores';
 
 const MENSAJE_GENERICO = 'Ocurrio un error inesperado. Intenta de nuevo en un momento.';
 
@@ -27,6 +27,11 @@ export const manejadorDeErrores: ErrorRequestHandler = (error, _peticion, respue
   }
   if (error instanceof Conflicto) {
     respuesta.status(409).json({ mensaje: error.message });
+    return;
+  }
+  if (error instanceof DemasiadosIntentos) {
+    respuesta.set('Retry-After', String(error.segundosParaReintentar));
+    respuesta.status(429).json({ mensaje: error.message });
     return;
   }
   if (esJsonMalFormado(error)) {

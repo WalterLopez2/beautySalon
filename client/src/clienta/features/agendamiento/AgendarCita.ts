@@ -1,9 +1,8 @@
 // Caso de uso: orquesta el agendamiento. Vive aparte de React para poder
 // probarlo con repositorios falsos y sin montar componentes.
 
-import type { Cita } from '../../../compartido/dominio/Cita.ts'
 import { ErrorDeValidacion } from '../../../compartido/dominio/ErrorDeValidacion.ts'
-import type { RepositorioCitas } from './repositorioCitas.ts'
+import type { CitaAgendada, RepositorioCitas } from './repositorioCitas.ts'
 import type { SolicitudDeCita } from './SolicitudDeCita.ts'
 
 export class SolicitudInvalida extends ErrorDeValidacion {
@@ -20,7 +19,7 @@ export class AgendarCita {
     this.repositorio = repositorio
   }
 
-  async ejecutar(solicitud: SolicitudDeCita): Promise<Cita> {
+  async ejecutar(solicitud: SolicitudDeCita): Promise<CitaAgendada> {
     const errores = solicitud.errores()
     if (errores.length > 0) {
       throw new SolicitudInvalida(errores)

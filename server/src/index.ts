@@ -10,7 +10,10 @@ import { crearDependencias } from './contenedor';
 cargarArchivoEnv();
 const configuracion = leerConfiguracion();
 const baseDeDatos = new BaseDeDatosPostgres(new pg.Pool(configuracion.baseDeDatos));
-const app = crearApp(crearDependencias(baseDeDatos, configuracion));
+const app = crearApp(crearDependencias(baseDeDatos, configuracion), {
+  proxiesDeConfianza: configuracion.proxiesDeConfianza,
+  soloHttps: configuracion.soloHttps,
+});
 
 const servidor = app.listen(configuracion.puerto, () => {
   console.log(`API del salon escuchando en http://localhost:${configuracion.puerto}/api`);

@@ -2,8 +2,9 @@
 // Cada ruta hace solo tres cosas: leer la entrada, llamar al dominio y
 // responder. Express 5 pasa los errores de las funciones async al manejador.
 
-import { Router } from 'express';
-import type { CitaRegistrada, FranjaOcupada } from '../compartido/citas/repositorioCitas';
+import { Router, type Request } from 'express';
+import { aCitaDTO } from '../compartido/citas/presentacion';
+import type { CitaRegistrada } from '../compartido/citas/repositorioCitas';
 import { esTelefonoValido, normalizarTelefono } from '../compartido/dominio/telefono';
 import { DatosInvalidos } from '../compartido/errores';
 import {
@@ -15,21 +16,30 @@ import {
   leerTexto,
   leerTextoOpcional,
 } from '../compartido/http/entrada';
+import { hashDeCodigo } from '../compartido/seguridad/codigosDeConsulta';
+import type { LimitadorDeIntentos } from '../compartido/seguridad/LimitadorDeIntentos';
 import type { Servicio } from '../compartido/servicios/repositorioServicios';
-import type { SolicitudDeCita } from './AgendarCita';
-import { aCitaDTO } from '../compartido/citas/presentacion';
-import { aAgendaPublica } from './presentacion';
+import type { CitaAgendada, SolicitudDeCita } from './AgendarCita';
+import { aAgendaPublica, type AgendaDelDiaPublica } from './presentacion';
 
 export interface DependenciasDeLaClienta {
+  consultarAgenda: { ejecutar(fecha: string): Promise<AgendaDelDiaPublica> };
   servicios: { listarActivos(): Promise<Servicio[]> };
-  citas: {
-    ocupadasEl(fecha: string): Promise<FranjaOcupada[]>;
-    listarPorTelefono(telefono: string): Promise<CitaRegistrada[]>;
+  citas: { listarPorTelefonoYCodigo(telefono: string, codigoHash: string): Promise<CitaRegistrada[]> };
+  agendarCita: { ejecutar(solicitud: SolicitudDeCita): Promise<CitaAgendada> };
+  limites: {
+    agendar: LimitadorDeIntentos;
+    consultarHistorial: LimitadorDeIntentos;
   };
-  agendarCita: { ejecutar(solicitud: SolicitudDeCita): Promise<CitaRegistrada> };
 }
 
-export function crearRutasDeLaClienta({ servicios, citas, agendarCita }: DependenciasDeLaClienta): Router {
+interface ConsultaDeHistorial {
+  telefono: string;
+  codigo: string;
+}
+
+export function crearRutasDeLaClienta(dependencias: DependenciasDeLaClienta): Router {
+  const { consultarAgenda, servicios, citas, agendarCita, limites } = dependencias;
   const rutas = Router();
 
   rutas.get('/servicios', async (_peticion, respuesta) => {
@@ -38,24 +48,31 @@ export function crearRutasDeLaClienta({ servicios, citas, agendarCita }: Depende
 
   rutas.get('/citas/agenda', async (peticion, respuesta) => {
     const fecha = leerFecha(peticion.query.fecha, 'fecha');
-    respuesta.json(aAgendaPublica(fecha, await citas.ocupadasEl(fecha)));
+    respuesta.json(aAgendaPublica(await consultarAgenda.ejecutar(fecha)));
   });
 
   rutas.post('/citas', async (peticion, respuesta) => {
-    const cita = await agendarCita.ejecutar(leerSolicitudDeCita(peticion.body));
-    respuesta.status(201).json(aCitaDTO(cita));
+    limites.agendar.consumir(ipDe(peticion));
+    const { cita, codigoDeConsulta } = await agendarCita.ejecutar(leerSolicitudDeCita(peticion.body));
+    // Unica vez que el codigo sale del servidor: la clienta debe guardarlo.
+    respuesta.status(201).json({ ...aCitaDTO(cita), codigoDeConsulta });
   });
 
-  rutas.get('/citas', async (peticion, respuesta) => {
-    const telefono = leerTexto(peticion.query.telefono, 'telefono');
-    if (!esTelefonoValido(telefono)) {
-      throw new DatosInvalidos(['El telefono debe tener al menos 8 digitos.']);
-    }
-    const historial = await citas.listarPorTelefono(normalizarTelefono(telefono));
+  // POST y no GET: el telefono y el codigo no deben quedar en la URL, que
+  // termina en historiales del navegador y en logs de servidores.
+  rutas.post('/citas/consulta', async (peticion, respuesta) => {
+    limites.consultarHistorial.consumir(ipDe(peticion));
+    const { telefono, codigo } = leerConsultaDeHistorial(peticion.body);
+    const historial = await citas.listarPorTelefonoYCodigo(normalizarTelefono(telefono), hashDeCodigo(codigo));
     respuesta.json(historial.map(aCitaDTO));
   });
 
   return rutas;
+}
+
+// Con `trust proxy` configurado, Express ya resuelve la IP real del cliente.
+function ipDe(peticion: Request): string {
+  return peticion.ip ?? 'desconocida';
 }
 
 function leerSolicitudDeCita(cuerpo: unknown): SolicitudDeCita {
@@ -74,4 +91,16 @@ function leerSolicitudDeCita(cuerpo: unknown): SolicitudDeCita {
       });
     },
   });
+}
+
+function leerConsultaDeHistorial(cuerpo: unknown): ConsultaDeHistorial {
+  const datos = leerObjeto(cuerpo, 'la consulta');
+  const consulta = leerCampos<ConsultaDeHistorial>({
+    telefono: () => leerTexto(datos.telefono, 'telefono'),
+    codigo: () => leerTexto(datos.codigo, 'codigo'),
+  });
+  if (!esTelefonoValido(consulta.telefono)) {
+    throw new DatosInvalidos(['El telefono debe tener al menos 8 digitos.']);
+  }
+  return consulta;
 }

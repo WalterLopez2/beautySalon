@@ -1,0 +1,167 @@
+/* Estilos de la pagina publica. Se cargan solo con la vista de la clienta
+   (que es lazy), asi el panel de la duena no los descarga. Los colores salen
+   de las variables definidas en index.css. */
+
+/* ----- Base ----- */
+
+.vista-clienta {
+  background: var(--color-background);
+  color: var(--color-ink);
+  font: 300 17px/1.7 var(--fuente-texto);
+}
+
+.vista-clienta h1,
+.vista-clienta h2,
+.vista-clienta h3 {
+  font-family: var(--fuente-titulos);
+  font-weight: 500;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.vista-clienta :focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+.contenedor {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+}
+
+/* ----- Botones ----- */
+
+.boton {
+  display: inline-block;
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 30px;
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+  font: 400 15px var(--fuente-texto);
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.boton:hover {
+  background: var(--color-ink);
+  transform: translateY(-2px);
+}
+
+.boton--secundario {
+  background: none;
+  color: var(--color-ink);
+  border: 1px solid var(--color-gold);
+}
+
+.boton--secundario:hover {
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+}
+
+.boton--chico {
+  padding: 9px 18px;
+  font-size: 14px;
+}
+
+/* ----- Encabezado ----- */
+
+.encabezado {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--color-background) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.encabezado__contenido {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: 64px;
+}
+
+.encabezado__marca {
+  font: 500 22px var(--fuente-titulos);
+  letter-spacing: 0.22em;
+  color: var(--color-gold);
+}
+
+.encabezado__enlaces {
+  display: flex;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+}
+
+.encabezado__enlaces a {
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.encabezado__enlaces a:hover {
+  color: var(--color-gold);
+}
+
+/* ----- Portada ----- */
+
+.portada {
+  padding: 72px 0 90px;
+  text-align: center;
+}
+
+.portada__eslogan {
+  margin-bottom: 18px;
+  font: 400 clamp(36px, 7vw, 60px) / 1.2 var(--fuente-firma);
+  color: var(--color-gold);
+}
+
+.portada__descripcion {
+  max-width: 48ch;
+  margin: 0 auto 26px;
+  color: var(--color-muted);
+}
+
+/* ----- Pie de pagina ----- */
+
+.pie {
+  padding: 48px 24px;
+  border-top: 1px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.pie__marca {
+  display: block;
+  font: 400 34px var(--fuente-firma);
+  color: var(--color-gold);
+}
+
+/* ----- Pantallas chicas ----- */
+
+@media (max-width: 820px) {
+  .encabezado__enlaces {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vista-clienta * {
+    transition: none !important;
+  }
+}

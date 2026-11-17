@@ -8,7 +8,8 @@
     "dev:frontend": "pnpm --filter frontend dev",
     "db:preparar": "pnpm --filter backend db:preparar",
     "crear-duena": "pnpm --filter backend crear-duena",
-    "test": "pnpm --filter backend test"
+    "test": "pnpm --filter backend test",
+    "verificar:secretos": "node scripts/verificar-secretos.mjs"
   },
   "license": "ISC"
 }

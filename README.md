@@ -98,7 +98,9 @@ Copiá `backend/.env.example` a `backend/.env` y completá tus datos de PostgreS
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-El archivo `.env` no se sube al repositorio.
+El archivo `.env` no se sube al repositorio. Nunca pongas datos reales en `backend/.env.example`: es una plantilla pública y el CI falla si alguna variable sensible (usuario, contraseña, secretos) trae un valor. Podés revisarlo antes de subir cambios con `pnpm verificar:secretos`.
+
+Si alguna vez se sube un secreto real por error, hay que cambiarlo (contraseña de la base de datos, `TOKEN_SECRETO`): borrarlo del archivo no lo saca del historial de git.
 
 ### 2. Crear las tablas
 

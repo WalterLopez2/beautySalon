@@ -6,6 +6,23 @@ on:
   pull_request:
 
 jobs:
+  secretos:
+    name: Sin secretos en el repositorio
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # todo el historial, para que gitleaks revise commits viejos
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Ningun .env real seguido por git y los .env.example sin valores sensibles.
+      - run: node scripts/verificar-secretos.mjs
+      # Busca claves, tokens y contrasenas en todo el codigo y el historial.
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   backend:
     name: Backend (pruebas)
     runs-on: ubuntu-latest

@@ -1,7 +1,18 @@
-// Esqueleto del panel una vez dentro. Aqui se iran agregando las secciones
-// (agenda, clientas, servicios, horario, bloqueos, ingresos) con sus hooks.
+// Esqueleto del panel una vez dentro: encabezado, menu de secciones y la
+// seccion elegida. Solo estructura y accesibilidad; el diseno visual se
+// agrega despues.
 
+import { useState } from 'react'
+import { hoy } from '../../compartido/utils/fecha.ts'
 import type { Sesion } from '../features/sesion/Sesion.ts'
+import { MenuDelPanel } from './MenuDelPanel.tsx'
+import { SECCION_INICIAL, type IdDeSeccion } from './secciones.ts'
+import { SeccionAgenda } from './agenda/SeccionAgenda.tsx'
+import { SeccionBloqueos } from './bloqueos/SeccionBloqueos.tsx'
+import { SeccionCatalogo } from './catalogo/SeccionCatalogo.tsx'
+import { SeccionClientas } from './clientas/SeccionClientas.tsx'
+import { SeccionHorario } from './horario/SeccionHorario.tsx'
+import { SeccionIngresos } from './ingresos/SeccionIngresos.tsx'
 
 interface Props {
   sesion: Sesion
@@ -9,14 +20,29 @@ interface Props {
 }
 
 export function PanelDeLaDuena({ sesion, onCerrarSesion }: Props) {
+  const [seccion, setSeccion] = useState<IdDeSeccion>(SECCION_INICIAL)
+  // La fecha se comparte entre agenda e ingresos: al cambiar de seccion no se pierde.
+  const [fecha, setFecha] = useState(hoy())
+
   return (
-    <main>
+    <div className="panel-duena">
       <header>
         <p>Hola, {sesion.nombre}</p>
         <button type="button" onClick={onCerrarSesion}>
           Cerrar sesion
         </button>
       </header>
-    </main>
+
+      <MenuDelPanel seccionActual={seccion} onElegir={setSeccion} />
+
+      <main id="contenido-del-panel">
+        {seccion === 'agenda' && <SeccionAgenda fecha={fecha} onCambiarFecha={setFecha} />}
+        {seccion === 'clientas' && <SeccionClientas />}
+        {seccion === 'catalogo' && <SeccionCatalogo />}
+        {seccion === 'horario' && <SeccionHorario />}
+        {seccion === 'bloqueos' && <SeccionBloqueos fecha={fecha} />}
+        {seccion === 'ingresos' && <SeccionIngresos fecha={fecha} onCambiarFecha={setFecha} />}
+      </main>
+    </div>
   )
 }

@@ -6,6 +6,7 @@
 import { Encabezado } from './componentes/Encabezado.tsx'
 import { PieDePagina } from './componentes/PieDePagina.tsx'
 import { Portada } from './componentes/Portada.tsx'
+import { SeccionServicios } from './componentes/servicios/SeccionServicios.tsx'
 import './VistaClienta.css'
 
 export default function VistaClienta() {
@@ -13,7 +14,9 @@ export default function VistaClienta() {
     <div className="vista-clienta">
       <Encabezado />
       <Portada />
-      <main />
+      <main>
+        <SeccionServicios />
+      </main>
       <PieDePagina />
     </div>
   )

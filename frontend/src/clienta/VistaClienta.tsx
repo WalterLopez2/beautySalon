@@ -6,16 +6,22 @@
 import { Encabezado } from './componentes/Encabezado.tsx'
 import { PieDePagina } from './componentes/PieDePagina.tsx'
 import { Portada } from './componentes/Portada.tsx'
+import { SeccionReservar } from './componentes/reservar/SeccionReservar.tsx'
 import { SeccionServicios } from './componentes/servicios/SeccionServicios.tsx'
+import { useCatalogoServicios } from './hooks/useCatalogoServicios.ts'
 import './VistaClienta.css'
 
 export default function VistaClienta() {
+  // El catalogo se pide una sola vez y lo comparten las secciones que lo usan.
+  const catalogoEnPantalla = useCatalogoServicios()
+
   return (
     <div className="vista-clienta">
       <Encabezado />
       <Portada />
       <main>
-        <SeccionServicios />
+        <SeccionServicios catalogoEnPantalla={catalogoEnPantalla} />
+        <SeccionReservar catalogoEnPantalla={catalogoEnPantalla} />
       </main>
       <PieDePagina />
     </div>

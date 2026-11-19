@@ -7,7 +7,7 @@ import type { RepositorioServicios } from '../../compartido/dominio/repositorioS
 import { contenedor } from '../contenedor.ts'
 import { mensajeDeError } from '../../compartido/utils/errores.ts'
 
-interface CatalogoEnPantalla {
+export interface CatalogoEnPantalla {
   catalogo: CatalogoServicios
   cargando: boolean
   error: string | null

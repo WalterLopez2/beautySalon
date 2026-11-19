@@ -1,18 +1,19 @@
 // Seccion "Servicios" de la pagina publica: muestra el catalogo con su precio y
-// duracion, y deja filtrarlo por categoria. Los datos vienen del hook; esta
-// seccion solo decide que mostrar segun el estado (cargando, error, vacio).
+// duracion, y deja filtrarlo por categoria. El catalogo llega por props (lo
+// carga la vista una sola vez); esta seccion solo decide que mostrar segun el
+// estado (cargando, error, vacio).
 
 import { useState } from 'react'
-import type { CatalogoServicios } from '../../../compartido/dominio/CatalogoServicios.ts'
-import { useCatalogoServicios } from '../../hooks/useCatalogoServicios.ts'
+import type { CatalogoEnPantalla } from '../../hooks/useCatalogoServicios.ts'
 import { SECCIONES } from '../secciones.ts'
 import { FiltroDeCategorias } from './FiltroDeCategorias.tsx'
 import { TarjetaDeServicio } from './TarjetaDeServicio.tsx'
 
-export function SeccionServicios() {
-  const { catalogo, cargando, error, recargar } = useCatalogoServicios()
-  const [categoria, setCategoria] = useState<string | null>(null)
+interface Props {
+  catalogoEnPantalla: CatalogoEnPantalla
+}
 
+export function SeccionServicios({ catalogoEnPantalla }: Props) {
   return (
     <section id={SECCIONES.servicios} className="seccion" aria-labelledby="titulo-servicios">
       <div className="contenedor">
@@ -23,36 +24,15 @@ export function SeccionServicios() {
           Elige lo que quieras consentirte hoy. Cada servicio indica cuanto dura y su precio.
         </p>
 
-        <ContenidoDelCatalogo
-          catalogo={catalogo}
-          cargando={cargando}
-          error={error}
-          recargar={recargar}
-          categoria={categoria}
-          alCambiarCategoria={setCategoria}
-        />
+        <ContenidoDelCatalogo {...catalogoEnPantalla} />
       </div>
     </section>
   )
 }
 
-interface PropsDelContenido {
-  catalogo: CatalogoServicios
-  cargando: boolean
-  error: string | null
-  recargar: () => void
-  categoria: string | null
-  alCambiarCategoria: (categoria: string | null) => void
-}
+function ContenidoDelCatalogo({ catalogo, cargando, error, recargar }: CatalogoEnPantalla) {
+  const [categoria, setCategoria] = useState<string | null>(null)
 
-function ContenidoDelCatalogo({
-  catalogo,
-  cargando,
-  error,
-  recargar,
-  categoria,
-  alCambiarCategoria,
-}: PropsDelContenido) {
   if (cargando) {
     return <p role="status">Cargando servicios...</p>
   }
@@ -79,7 +59,7 @@ function ContenidoDelCatalogo({
       <FiltroDeCategorias
         categorias={catalogo.categorias()}
         seleccionada={categoria}
-        alSeleccionar={alCambiarCategoria}
+        alSeleccionar={setCategoria}
       />
 
       <div className="cuadricula-servicios">

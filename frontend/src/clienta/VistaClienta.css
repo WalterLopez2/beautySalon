@@ -243,6 +243,117 @@
   font-weight: 500;
 }
 
+/* ----- Reservar ----- */
+
+.seccion--suave {
+  background: var(--color-sand);
+}
+
+.formulario-cita {
+  display: grid;
+  gap: 20px;
+  max-width: 760px;
+}
+
+.paso {
+  margin: 0;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  padding: 22px 20px;
+  background: var(--color-surface);
+}
+
+.paso__titulo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 6px;
+  font: 500 22px var(--fuente-titulos);
+}
+
+.paso__numero {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+  font: 400 15px var(--fuente-texto);
+}
+
+.opciones-servicio {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.opcion-servicio {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.opcion-servicio:hover,
+.opcion-servicio:has(input:checked) {
+  border-color: var(--color-gold);
+}
+
+.opcion-servicio:has(input:checked) {
+  background: var(--color-background);
+}
+
+.opcion-servicio input {
+  grid-row: span 2;
+  accent-color: var(--color-gold);
+}
+
+.opcion-servicio__nombre {
+  font-weight: 400;
+}
+
+.opcion-servicio__detalle {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.campo {
+  display: grid;
+  gap: 6px;
+  max-width: 320px;
+  margin-top: 12px;
+}
+
+.campo__etiqueta {
+  font-size: 15px;
+}
+
+.campo__control {
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+}
+
+.campo__control:focus-visible {
+  border-color: var(--color-gold);
+}
+
+.campo__ayuda {
+  color: var(--color-muted);
+  font-size: 14px;
+  text-transform: capitalize;
+}
+
 /* ----- Pie de pagina ----- */
 
 .pie {

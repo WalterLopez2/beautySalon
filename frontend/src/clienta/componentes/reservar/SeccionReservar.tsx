@@ -2,7 +2,7 @@
 // `useAgendamiento` y las reglas en `SolicitudDeCita`; esta seccion solo
 // conecta cada paso con su parte de la solicitud.
 //
-// Pasos actuales: servicio y fecha. La hora y el contacto se agregan despues.
+// Pasos actuales: servicio, fecha y hora. El contacto se agrega despues.
 
 import type { Servicio } from '../../../compartido/dominio/Servicio.ts'
 import type { CatalogoEnPantalla } from '../../hooks/useCatalogoServicios.ts'
@@ -10,6 +10,7 @@ import { useAgendamiento } from '../../hooks/useAgendamiento.ts'
 import { SECCIONES } from '../secciones.ts'
 import { PasoDelFormulario } from './PasoDelFormulario.tsx'
 import { SelectorDeFechaDeCita } from './SelectorDeFechaDeCita.tsx'
+import { SelectorDeHora } from './SelectorDeHora.tsx'
 import { SelectorDeServicio } from './SelectorDeServicio.tsx'
 
 interface Props {
@@ -52,7 +53,7 @@ interface PropsDelFormulario {
 }
 
 function FormularioDeCita({ servicios }: PropsDelFormulario) {
-  const { solicitud, elegirServicio, elegirFecha } = useAgendamiento()
+  const { solicitud, elegirServicio, elegirFecha, elegirHora } = useAgendamiento()
 
   return (
     <div className="formulario-cita">
@@ -66,6 +67,15 @@ function FormularioDeCita({ servicios }: PropsDelFormulario) {
 
       <PasoDelFormulario numero={2} titulo="Elige el dia">
         <SelectorDeFechaDeCita fecha={solicitud.fecha} alElegir={elegirFecha} />
+      </PasoDelFormulario>
+
+      <PasoDelFormulario numero={3} titulo="Elige la hora">
+        <SelectorDeHora
+          servicio={solicitud.servicio}
+          fecha={solicitud.fecha}
+          horaElegida={solicitud.hora}
+          alElegir={elegirHora}
+        />
       </PasoDelFormulario>
     </div>
   )

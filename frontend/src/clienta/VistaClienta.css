@@ -354,6 +354,52 @@
   text-transform: capitalize;
 }
 
+.paso__aviso {
+  margin: 12px 0 0;
+  color: var(--color-muted);
+}
+
+.opciones-hora {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* El radio queda oculto a la vista pero sigue siendo usable con teclado y
+   lector de pantalla; la etiqueta completa hace de boton. */
+.opcion-hora {
+  position: relative;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 9px 12px;
+  text-align: center;
+  font-size: 15px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.opcion-hora__radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.opcion-hora:hover {
+  border-color: var(--color-gold);
+}
+
+.opcion-hora:has(:checked) {
+  border-color: var(--color-gold);
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+}
+
+.opcion-hora:has(:focus-visible) {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
 /* ----- Pie de pagina ----- */
 
 .pie {

@@ -1,5 +1,9 @@
 // Disponibilidad de un dia para un servicio. Si la fecha es hoy, no ofrece
 // horas que ya pasaron.
+//
+// Cada respuesta se guarda junto con la fecha que pidio. Asi "cargando" no es
+// un estado aparte que haya que mantener sincronizado: se deduce de que la
+// fecha en pantalla todavia no tiene respuesta.
 
 import { useEffect, useState } from 'react'
 import { AgendaDelDia } from '../features/agendamiento/AgendaDelDia.ts'
@@ -10,12 +14,11 @@ import { esFechaValida, hoy } from '../../compartido/utils/fecha.ts'
 import { mensajeDeError } from '../../compartido/utils/errores.ts'
 import { horaActual } from '../../compartido/utils/hora.ts'
 
-interface AgendaCargada {
-  fecha: string
-  agenda: AgendaDelDia
-}
+type RespuestaDelDia =
+  | { fecha: string; agenda: AgendaDelDia }
+  | { fecha: string; error: string }
 
-interface DisponibilidadEnPantalla {
+export interface DisponibilidadEnPantalla {
   horasDisponibles: string[]
   // false = ese dia el salon no atiende: la vista lo dice en vez de "sin horas".
   salonAbierto: boolean
@@ -28,27 +31,19 @@ export function useAgendaDelDia(
   servicio: Servicio | null,
   repositorio: RepositorioCitas = contenedor.repositorioCitas,
 ): DisponibilidadEnPantalla {
-  const [cargada, setCargada] = useState<AgendaCargada | null>(null)
-  const [cargando, setCargando] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [respuesta, setRespuesta] = useState<RespuestaDelDia | null>(null)
 
   useEffect(() => {
     if (!esFechaValida(fecha)) return
 
     let vigente = true
-    setCargando(true)
-    setError(null)
-
     repositorio
       .agendaDe(fecha)
       .then((agenda) => {
-        if (vigente) setCargada({ fecha, agenda })
+        if (vigente) setRespuesta({ fecha, agenda })
       })
       .catch((causa: unknown) => {
-        if (vigente) setError(mensajeDeError(causa))
-      })
-      .finally(() => {
-        if (vigente) setCargando(false)
+        if (vigente) setRespuesta({ fecha, error: mensajeDeError(causa) })
       })
 
     // Si la clienta cambia de fecha, la respuesta anterior se descarta.
@@ -57,8 +52,11 @@ export function useAgendaDelDia(
     }
   }, [fecha, repositorio])
 
-  // La agenda se usa solo si corresponde a la fecha que esta en pantalla.
-  const agenda = cargada?.fecha === fecha ? cargada.agenda : null
+  // Solo cuenta la respuesta que corresponde a la fecha que esta en pantalla.
+  const respuestaDelDia = respuesta?.fecha === fecha ? respuesta : null
+  const agenda = respuestaDelDia && 'agenda' in respuestaDelDia ? respuestaDelDia.agenda : null
+  const error = respuestaDelDia && 'error' in respuestaDelDia ? respuestaDelDia.error : null
+
   const horasDisponibles =
     agenda && servicio
       ? agenda.horasDisponiblesPara(
@@ -67,5 +65,10 @@ export function useAgendaDelDia(
         )
       : []
 
-  return { horasDisponibles, salonAbierto: agenda?.estaAbierto() ?? true, cargando, error }
+  return {
+    horasDisponibles,
+    salonAbierto: agenda?.estaAbierto() ?? true,
+    cargando: esFechaValida(fecha) && respuestaDelDia === null,
+    error,
+  }
 }

@@ -37,7 +37,17 @@ export function leerConfiguracionDeBaseDeDatos(entorno: Entorno = process.env): 
     database: leerObligatoria(entorno, 'DB_NAME'),
     user: leerObligatoria(entorno, 'DB_USER'),
     password: entorno.DB_PASSWORD ?? '',
+    ssl: leerSslDeBaseDeDatos(entorno),
   };
+}
+
+// Con DB_SSL=true la conexion con PostgreSQL va cifrada (telefonos, nombres y
+// citas no viajan en texto plano) y se verifica el certificado del servidor:
+// sin esa verificacion, cualquiera en el camino podria hacerse pasar por la
+// base de datos. Por defecto va apagado porque en tu computadora la base es
+// local y no tiene certificado.
+function leerSslDeBaseDeDatos(entorno: Entorno): PoolConfig['ssl'] {
+  return leerBooleano(entorno, 'DB_SSL', false) ? { rejectUnauthorized: true } : false;
 }
 
 function leerSecretoDeTokens(entorno: Entorno): string {
@@ -65,6 +75,16 @@ function leerNumero(entorno: Entorno, nombre: string, porDefecto: number): numbe
     throw new Error(`La variable de entorno ${nombre} debe ser un numero positivo.`);
   }
   return valor;
+}
+
+// Solo acepta "true" o "false". Un error de tipeo ("ture", "si") detiene el
+// arranque en vez de apagar una proteccion sin que nadie se entere.
+function leerBooleano(entorno: Entorno, nombre: string, porDefecto: boolean): boolean {
+  const crudo = entorno[nombre]?.trim().toLowerCase();
+  if (!crudo) return porDefecto;
+  if (crudo === 'true') return true;
+  if (crudo === 'false') return false;
+  throw new Error(`La variable de entorno ${nombre} debe ser true o false.`);
 }
 
 function leerEnteroNoNegativo(entorno: Entorno, nombre: string, porDefecto: number): number {

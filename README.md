@@ -156,6 +156,7 @@ En el `.env` del servidor:
 
 - `PROXIES_DE_CONFIANZA=1` (o la cantidad de proxies delante de la API), para que los límites por IP funcionen detrás del hosting.
 - `SOLO_HTTPS=true` cuando la API se sirva por HTTPS.
+- `DB_SSL=true` cuando PostgreSQL esté en otro servidor, para que los datos de las clientas viajen cifrados entre la API y la base. Se verifica el certificado del servidor, así que el proveedor debe usar uno válido.
 
 En el hosting del frontend:
 

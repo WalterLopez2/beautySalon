@@ -49,6 +49,7 @@ Una aplicación web con dos vistas:
 - El historial de una clienta requiere teléfono **y** código; en la base solo se guarda el hash del código.
 - Dos clientas no pueden tomar la misma hora: agendar es una transacción con el día bloqueado.
 - Encabezados de seguridad en todas las respuestas y sin caché en el panel.
+- La página compilada trae una `Content-Security-Policy` estricta: solo carga scripts, estilos e imágenes del propio sitio y solo habla con su API. Si entrara un script malicioso, el navegador no lo ejecutaría ni lo dejaría enviar datos a otro servidor. Se arma en `frontend/seguridad/politicaDeContenido.ts`.
 
 ## Tecnologías
 
@@ -161,7 +162,8 @@ En el `.env` del servidor:
 En el hosting del frontend:
 
 - Servir `index.html` en `/panel` (la app decide qué vista mostrar).
-- Enviar un encabezado `Content-Security-Policy` para la página.
+- La `Content-Security-Policy` ya viene dentro de `index.html` al compilar (`pnpm build`); si la API está en otro dominio, definí `VITE_API_URL` antes de compilar para que quede permitida.
+- Enviar el encabezado `Content-Security-Policy: frame-ancestors 'none'` (o `X-Frame-Options: DENY`), para que nadie meta la página dentro de un `<iframe>`. Esa regla no se puede poner en `index.html`: tiene que venir del hosting.
 
 ## Autor
 

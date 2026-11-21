@@ -24,7 +24,8 @@ const DOMINGO = 7;
 const CODIGO_DE_ANA = 'ABCDE23456';
 const TELEFONO_DE_ANA = '99990000';
 
-const tokens = new EmisorDeTokens('una-clave-secreta-de-pruebas-de-32-caracteres', UNA_HORA);
+const SECRETO_DE_PRUEBAS = 'una-clave-secreta-de-pruebas-de-32-caracteres';
+const tokens = new EmisorDeTokens(SECRETO_DE_PRUEBAS, UNA_HORA);
 let versionDeSesion = 0;
 const versiones = {
   versionDeSesion: async () => versionDeSesion,
@@ -264,15 +265,90 @@ describe('Encabezados de seguridad', () => {
   });
 });
 
+// ----- Frontera entre la vista publica y el panel -----
+//
+// Al agregar una ruta al panel, agregala tambien aqui. Aunque se olvide, la
+// prueba de "rutas que no existen" igual demuestra que la sesion se revisa
+// antes de buscar la ruta, asi que nada bajo /panel queda abierto.
+const RUTAS_DEL_PANEL: ReadonlyArray<readonly [metodo: string, ruta: string]> = [
+  ['GET', '/sesion'],
+  ['POST', '/sesion/cerrar'],
+  ['GET', '/citas?desde=2026-11-09&hasta=2026-11-15'],
+  ['PATCH', '/citas/5/estado'],
+  ['GET', '/clientas'],
+  ['GET', '/clientas/7/historial'],
+  ['GET', '/servicios'],
+  ['POST', '/servicios'],
+  ['PUT', '/servicios/1'],
+  ['PATCH', '/servicios/1/activo'],
+  ['GET', '/horario'],
+  ['PUT', '/horario'],
+  ['GET', '/bloqueos?desde=2026-11-01&hasta=2026-11-30'],
+  ['POST', '/bloqueos'],
+  ['DELETE', '/bloqueos/1'],
+];
+
+// Un token bien firmado pero que vencio hace una hora.
+const tokenVencido = new EmisorDeTokens(SECRETO_DE_PRUEBAS, UNA_HORA, () => Date.now() - 2 * UNA_HORA).emitir(
+  1,
+  'Delmy',
+  0,
+).token;
+
+const SESIONES_INVALIDAS: ReadonlyArray<readonly [descripcion: string, token: string | undefined]> = [
+  ['sin token', undefined],
+  ['con un token falso', 'falso.token'],
+  ['con un token vencido', tokenVencido],
+];
+
+function peticionA(metodo: string, token?: string): RequestInit {
+  if (metodo === 'GET' || metodo === 'DELETE') {
+    return token ? { method: metodo, ...conSesion(token) } : { method: metodo };
+  }
+  return conJson(metodo, {}, token);
+}
+
+describe('Frontera: el panel exige sesion en todas sus rutas', () => {
+  describe.each(SESIONES_INVALIDAS)('%s', (_descripcion, token) => {
+    it.each(RUTAS_DEL_PANEL)('%s /panel%s responde 401 sin datos', async (metodo, ruta) => {
+      const respuesta = await pedir(`/panel${ruta}`, peticionA(metodo, token));
+
+      expect(respuesta.status).toBe(401);
+      expect(Object.keys(await respuesta.json())).toEqual(['mensaje']);
+    });
+  });
+
+  // Si lo inexistente tambien responde 401 (y no 404), la sesion se revisa
+  // ANTES de buscar la ruta: cubre las rutas de hoy y las que se agreguen.
+  it.each([
+    ['GET', '/panel/no-existe'],
+    ['DELETE', '/panel/clientas/7'],
+    ['POST', '/panel/exportar'],
+    ['GET', '/PANEL/clientas'],
+    ['GET', '/panel/clientas/'],
+  ])('%s %s responde 401 y no revela si la ruta existe', async (metodo, ruta) => {
+    expect((await pedir(ruta, peticionA(metodo))).status).toBe(401);
+  });
+});
+
+describe('Frontera: las rutas del panel no existen fuera de /panel', () => {
+  // Ni siquiera con una sesion valida: el error que se busca evitar es montar
+  // un router del panel en el lugar equivocado y dejarlo publico.
+  const fueraDelPanel = RUTAS_DEL_PANEL.filter(([metodo, ruta]) => !(metodo === 'GET' && ruta === '/servicios'));
+
+  it.each(fueraDelPanel)('%s %s responde 404', async (metodo, ruta) => {
+    expect((await pedir(ruta, peticionA(metodo, tokenNuevo()))).status).toBe(404);
+  });
+
+  it('GET /servicios publico entrega solo el catalogo publico, nunca el del panel', async () => {
+    const respuesta = await pedir('/servicios', conSesion());
+
+    expect(respuesta.status).toBe(200);
+    expect(await respuesta.json()).toEqual([]); // el doble publico no tiene servicios; el del panel, si
+  });
+});
+
 describe('API del panel (duena)', () => {
-  it('rechaza las rutas del panel sin sesion', async () => {
-    expect((await pedir('/panel/citas?desde=2026-11-09&hasta=2026-11-15')).status).toBe(401);
-  });
-
-  it('rechaza un token falso', async () => {
-    expect((await pedir('/panel/clientas', conSesion('falso.token'))).status).toBe(401);
-  });
-
   it('inicia sesion y con ese token entra al panel', async () => {
     const login = await pedir('/auth/login', conJson('POST', { usuario: 'delmy', contrasena: 'correcta' }));
     const { token } = await login.json();

@@ -1,5 +1,11 @@
-// Rutas del panel de la duena. Solo `/auth/login` es publica; todo lo que
-// cuelga de `/panel` pasa antes por `requiereSesion` y se responde sin cache.
+// Rutas de la duena. La frontera con la vista publica es estructural:
+//
+// - Afuera del panel solo existe `/auth/login`.
+// - Todo lo demas vive en el router del panel, que se monta en `/panel` DETRAS
+//   de `requiereSesion`, en una sola linea. Una ruta nueva del panel queda
+//   protegida sin que nadie tenga que acordarse de protegerla, y como la
+//   sesion se revisa antes de buscar la ruta, sin token ni siquiera se puede
+//   averiguar que rutas existen (todo responde 401, tambien lo inexistente).
 
 import { Router } from 'express';
 import type { CitaRegistrada } from '../compartido/citas/repositorioCitas';
@@ -43,7 +49,7 @@ export interface DependenciasDeLaDuena {
 }
 
 export function crearRutasDeLaDuena(dependencias: DependenciasDeLaDuena): Router {
-  const { iniciarSesion, verificarSesion, cerrarSesion, cambiarEstadoDeCita, citas, clientes } = dependencias;
+  const { iniciarSesion, verificarSesion } = dependencias;
   const rutas = Router();
 
   rutas.post('/auth/login', sinCache, async (peticion, respuesta) => {
@@ -51,45 +57,53 @@ export function crearRutasDeLaDuena(dependencias: DependenciasDeLaDuena): Router
     respuesta.json(await iniciarSesion.ejecutar(credenciales, peticion.ip ?? 'desconocida'));
   });
 
-  rutas.use('/panel', sinCache, requiereSesion(verificarSesion));
+  rutas.use('/panel', sinCache, requiereSesion(verificarSesion), crearRutasDelPanel(dependencias));
+
+  return rutas;
+}
+
+// Solo se monta detras de `requiereSesion`: aqui todas las rutas ya tienen sesion.
+function crearRutasDelPanel(dependencias: DependenciasDeLaDuena): Router {
+  const { cerrarSesion, cambiarEstadoDeCita, citas, clientes } = dependencias;
+  const panel = Router();
 
   // ----- Sesion -----
 
   // Al abrir el panel, el frontend confirma que su token sigue sirviendo.
-  rutas.get('/panel/sesion', (_peticion, respuesta) => {
+  panel.get('/sesion', (_peticion, respuesta) => {
     const { nombre, expiraEn } = sesionActual(respuesta);
     respuesta.json({ nombre, expiraEn: new Date(expiraEn).toISOString() });
   });
 
-  rutas.post('/panel/sesion/cerrar', async (_peticion, respuesta) => {
+  panel.post('/sesion/cerrar', async (_peticion, respuesta) => {
     await cerrarSesion.ejecutar(sesionActual(respuesta));
     respuesta.status(204).end();
   });
 
   // ----- Configuracion del salon -----
 
-  rutas.use('/panel', crearRutasDeConfiguracion(dependencias.configuracion));
-  rutas.use('/panel', crearRutasDeBloqueos(dependencias.bloqueos));
+  panel.use(crearRutasDeConfiguracion(dependencias.configuracion));
+  panel.use(crearRutasDeBloqueos(dependencias.bloqueos));
 
   // ----- Agenda y clientas -----
 
-  rutas.get('/panel/citas', async (peticion, respuesta) => {
+  panel.get('/citas', async (peticion, respuesta) => {
     const { desde, hasta } = leerRangoDeFechas(peticion.query.desde, peticion.query.hasta, DIAS_MAXIMOS_POR_CONSULTA);
     const encontradas = await citas.listarEntre(desde, hasta);
     respuesta.json(encontradas.map(aCitaDelPanel));
   });
 
-  rutas.patch('/panel/citas/:id/estado', async (peticion, respuesta) => {
+  panel.patch('/citas/:id/estado', async (peticion, respuesta) => {
     const citaId = leerIdentificador(peticion.params.id, 'id');
     const estado = leerEstadoCita(leerObjeto(peticion.body, 'el cambio').estado);
     respuesta.json(aCitaDelPanel(await cambiarEstadoDeCita.ejecutar(citaId, estado)));
   });
 
-  rutas.get('/panel/clientas', async (_peticion, respuesta) => {
+  panel.get('/clientas', async (_peticion, respuesta) => {
     respuesta.json((await clientes.listar()).map(aClienta));
   });
 
-  rutas.get('/panel/clientas/:id/historial', async (peticion, respuesta) => {
+  panel.get('/clientas/:id/historial', async (peticion, respuesta) => {
     const clientaId = leerIdentificador(peticion.params.id, 'id');
     const clienta = await clientes.obtenerPorId(clientaId);
     if (!clienta) {
@@ -98,7 +112,7 @@ export function crearRutasDeLaDuena(dependencias: DependenciasDeLaDuena): Router
     respuesta.json(aHistorialDeClienta(clienta, await citas.listarPorCliente(clientaId)));
   });
 
-  return rutas;
+  return panel;
 }
 
 function leerCredenciales(cuerpo: unknown): Credenciales {

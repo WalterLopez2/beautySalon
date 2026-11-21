@@ -3,7 +3,7 @@
 
 import type { FormEvent } from 'react'
 import type { BorradorDeServicio, CamposDelServicio } from '../../features/catalogo/BorradorDeServicio.ts'
-import { ListaDeErrores } from '../ListaDeErrores.tsx'
+import { ListaDeErrores } from '../../../compartido/componentes/ListaDeErrores.tsx'
 
 interface Props {
   borrador: BorradorDeServicio

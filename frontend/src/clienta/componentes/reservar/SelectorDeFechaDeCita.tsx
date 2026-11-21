@@ -20,7 +20,9 @@ export function SelectorDeFechaDeCita({ fecha, alElegir }: Props) {
         value={fecha}
         onChange={(evento) => alElegir(evento.target.value)}
       />
-      {esFechaValida(fecha) && <span className="campo__ayuda">{formatearFecha(fecha)}</span>}
+      {esFechaValida(fecha) && (
+        <span className="campo__ayuda fecha-en-palabras">{formatearFecha(fecha)}</span>
+      )}
     </label>
   )
 }

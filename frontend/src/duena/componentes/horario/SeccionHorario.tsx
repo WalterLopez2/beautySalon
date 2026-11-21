@@ -4,7 +4,7 @@
 import { DIAS_DE_LA_SEMANA } from '../../features/horario/HorarioSemanal.ts'
 import { useHorarioDelSalon } from '../../hooks/useHorarioDelSalon.ts'
 import { EstadoDeConsulta } from '../EstadoDeConsulta.tsx'
-import { ListaDeErrores } from '../ListaDeErrores.tsx'
+import { ListaDeErrores } from '../../../compartido/componentes/ListaDeErrores.tsx'
 import { FilaDeDia } from './FilaDeDia.tsx'
 
 // Un input numerico vacio significa "sin valor todavia".

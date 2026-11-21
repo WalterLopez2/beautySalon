@@ -2,7 +2,7 @@
 
 import type { FormEvent } from 'react'
 import type { BorradorDeBloqueo, CamposDelBloqueo } from '../../features/bloqueos/BorradorDeBloqueo.ts'
-import { ListaDeErrores } from '../ListaDeErrores.tsx'
+import { ListaDeErrores } from '../../../compartido/componentes/ListaDeErrores.tsx'
 
 interface Props {
   borrador: BorradorDeBloqueo

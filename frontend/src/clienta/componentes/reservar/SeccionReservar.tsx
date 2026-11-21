@@ -1,14 +1,18 @@
-// Seccion "Reservar": la clienta arma su cita paso a paso. El estado vive en
-// `useAgendamiento` y las reglas en `SolicitudDeCita`; esta seccion solo
-// conecta cada paso con su parte de la solicitud.
-//
-// Pasos actuales: servicio, fecha y hora. El contacto se agrega despues.
+// Seccion "Reservar": la clienta arma su cita paso a paso y la confirma. El
+// estado vive en `useAgendamiento` y las reglas en `SolicitudDeCita` y en el
+// caso de uso `AgendarCita`; esta seccion solo conecta cada paso con su parte
+// de la solicitud y, al terminar, muestra el comprobante.
 
+import type { FormEvent } from 'react'
+import { ListaDeErrores } from '../../../compartido/componentes/ListaDeErrores.tsx'
 import type { Servicio } from '../../../compartido/dominio/Servicio.ts'
 import type { CatalogoEnPantalla } from '../../hooks/useCatalogoServicios.ts'
 import { useAgendamiento } from '../../hooks/useAgendamiento.ts'
 import { SECCIONES } from '../secciones.ts'
+import { CamposDeContacto } from './CamposDeContacto.tsx'
+import { ComprobanteDeCita } from './ComprobanteDeCita.tsx'
 import { PasoDelFormulario } from './PasoDelFormulario.tsx'
+import { ResumenDeLaSolicitud } from './ResumenDeLaSolicitud.tsx'
 import { SelectorDeFechaDeCita } from './SelectorDeFechaDeCita.tsx'
 import { SelectorDeHora } from './SelectorDeHora.tsx'
 import { SelectorDeServicio } from './SelectorDeServicio.tsx'
@@ -53,20 +57,32 @@ interface PropsDelFormulario {
 }
 
 function FormularioDeCita({ servicios }: PropsDelFormulario) {
-  const { solicitud, elegirServicio, elegirFecha, elegirHora } = useAgendamiento()
+  const agendamiento = useAgendamiento()
+  const { solicitud, citaConfirmada, enviando, errores } = agendamiento
+
+  if (citaConfirmada) {
+    return <ComprobanteDeCita citaAgendada={citaConfirmada} alAgendarOtra={agendamiento.reiniciar} />
+  }
+
+  // `noValidate`: las reglas son las del dominio, con mensajes en espanol y
+  // las mismas que revisa el backend, no las del navegador.
+  function alEnviar(evento: FormEvent<HTMLFormElement>): void {
+    evento.preventDefault()
+    void agendamiento.enviar()
+  }
 
   return (
-    <div className="formulario-cita">
+    <form className="formulario-cita" noValidate onSubmit={alEnviar}>
       <PasoDelFormulario numero={1} titulo="Elige tu servicio">
         <SelectorDeServicio
           servicios={servicios}
           seleccionado={solicitud.servicio}
-          alElegir={elegirServicio}
+          alElegir={agendamiento.elegirServicio}
         />
       </PasoDelFormulario>
 
       <PasoDelFormulario numero={2} titulo="Elige el dia">
-        <SelectorDeFechaDeCita fecha={solicitud.fecha} alElegir={elegirFecha} />
+        <SelectorDeFechaDeCita fecha={solicitud.fecha} alElegir={agendamiento.elegirFecha} />
       </PasoDelFormulario>
 
       <PasoDelFormulario numero={3} titulo="Elige la hora">
@@ -74,9 +90,21 @@ function FormularioDeCita({ servicios }: PropsDelFormulario) {
           servicio={solicitud.servicio}
           fecha={solicitud.fecha}
           horaElegida={solicitud.hora}
-          alElegir={elegirHora}
+          alElegir={agendamiento.elegirHora}
         />
       </PasoDelFormulario>
-    </div>
+
+      <PasoDelFormulario numero={4} titulo="Tus datos">
+        <CamposDeContacto contacto={solicitud.contacto} alCambiar={agendamiento.cambiarContacto} />
+      </PasoDelFormulario>
+
+      <div className="formulario-cita__confirmar">
+        <ResumenDeLaSolicitud solicitud={solicitud} />
+        <ListaDeErrores errores={errores} />
+        <button type="submit" className="boton" disabled={enviando}>
+          {enviando ? 'Agendando...' : 'Confirmar mi cita'}
+        </button>
+      </div>
+    </form>
   )
 }

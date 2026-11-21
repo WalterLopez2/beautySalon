@@ -351,7 +351,12 @@
 .campo__ayuda {
   color: var(--color-muted);
   font-size: 14px;
-  text-transform: capitalize;
+}
+
+/* "sabado, 21 de noviembre" -> "Sabado, 21 de noviembre": solo la primera
+   letra, no cada palabra como haria text-transform: capitalize. */
+.fecha-en-palabras::first-letter {
+  text-transform: uppercase;
 }
 
 .paso__aviso {
@@ -398,6 +403,106 @@
 .opcion-hora:has(:focus-visible) {
   outline: 2px solid var(--color-gold);
   outline-offset: 3px;
+}
+
+.campos-contacto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0 16px;
+}
+
+.campos-contacto .campo {
+  max-width: none;
+}
+
+.formulario-cita__confirmar {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: progress;
+  transform: none;
+}
+
+.lista-de-errores {
+  margin: 0;
+  border-left: 3px solid var(--color-rose);
+  padding: 8px 0 8px 22px;
+  color: var(--color-ink);
+  font-size: 15px;
+}
+
+/* ----- Detalle y comprobante de la cita ----- */
+
+.detalle-cita {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 18px;
+  margin: 0;
+  font-size: 15px;
+}
+
+.detalle-cita dt {
+  color: var(--color-muted);
+}
+
+.detalle-cita dd {
+  margin: 0;
+}
+
+.comprobante {
+  display: grid;
+  gap: 20px;
+  justify-items: start;
+  max-width: 560px;
+  border: 1px solid var(--color-gold);
+  border-radius: 18px;
+  padding: 28px 24px;
+  background: var(--color-surface);
+}
+
+.comprobante__titulo {
+  font-size: 28px;
+}
+
+.comprobante__titulo:focus {
+  outline: none;
+}
+
+.comprobante__codigo {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  width: 100%;
+  border-radius: 14px;
+  padding: 16px 18px;
+  background: var(--color-background);
+}
+
+.comprobante__codigo-etiqueta {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.comprobante__codigo-valor {
+  margin: 0;
+  font: 500 28px/1.2 ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  letter-spacing: 0.12em;
+  word-break: break-all;
+}
+
+.comprobante__aviso {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 15px;
+}
+
+.comprobante__aviso a {
+  color: var(--color-gold);
 }
 
 /* ----- Pie de pagina ----- */

@@ -42,6 +42,7 @@ export interface DependenciasDeLaDuena {
   citas: {
     listarEntre(desde: string, hasta: string): Promise<CitaRegistrada[]>;
     listarPorCliente(clienteId: number): Promise<CitaRegistrada[]>;
+    listarPendientes(): Promise<CitaRegistrada[]>;
   };
   clientes: {
     listar(): Promise<Cliente[]>;
@@ -103,6 +104,10 @@ function crearRutasDelPanel(dependencias: DependenciasDeLaDuena, cookie: CookieD
     const { desde, hasta } = leerRangoDeFechas(peticion.query.desde, peticion.query.hasta, DIAS_MAXIMOS_POR_CONSULTA);
     const encontradas = await citas.listarEntre(desde, hasta);
     respuesta.json(encontradas.map(aCitaDelPanel));
+  });
+
+  panel.get('/citas/pendientes', async (_peticion, respuesta) => {
+    respuesta.json((await citas.listarPendientes()).map(aCitaDelPanel));
   });
 
   panel.patch('/citas/:id/estado', async (peticion, respuesta) => {

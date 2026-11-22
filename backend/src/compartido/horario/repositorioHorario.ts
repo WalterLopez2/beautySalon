@@ -14,6 +14,9 @@ interface FilaConfiguracion {
   zona_horaria: string;
   intervalo_min: number;
   max_citas_pendientes: number;
+  dias_de_anticipacion: number;
+  horas_para_confirmar: number;
+  citas_por_conexion_al_dia: number;
 }
 
 interface FilaHorario {
@@ -31,7 +34,9 @@ export class RepositorioHorario {
 
   async obtenerConfiguracion(): Promise<ConfiguracionDelSalon | null> {
     const resultado = await this.baseDeDatos.query<FilaConfiguracion>(
-      'SELECT zona_horaria, intervalo_min, max_citas_pendientes FROM configuracion_salon',
+      `SELECT zona_horaria, intervalo_min, max_citas_pendientes,
+              dias_de_anticipacion, horas_para_confirmar, citas_por_conexion_al_dia
+       FROM configuracion_salon`,
     );
     const fila = resultado.rows[0];
     return fila
@@ -39,6 +44,9 @@ export class RepositorioHorario {
           zonaHoraria: fila.zona_horaria,
           intervaloMin: fila.intervalo_min,
           maxCitasPendientes: fila.max_citas_pendientes,
+          diasDeAnticipacion: fila.dias_de_anticipacion,
+          horasParaConfirmar: fila.horas_para_confirmar,
+          citasPorConexionAlDia: fila.citas_por_conexion_al_dia,
         }
       : null;
   }
@@ -67,13 +75,25 @@ export class RepositorioHorario {
   // nunca quede a medias (por ejemplo, sin dias despues del DELETE).
   async guardarSemanal({ configuracion, dias }: HorarioSemanal): Promise<void> {
     await this.baseDeDatos.query(
-      `INSERT INTO configuracion_salon (id, zona_horaria, intervalo_min, max_citas_pendientes)
-       VALUES (TRUE, $1, $2, $3)
+      `INSERT INTO configuracion_salon
+         (id, zona_horaria, intervalo_min, max_citas_pendientes,
+          dias_de_anticipacion, horas_para_confirmar, citas_por_conexion_al_dia)
+       VALUES (TRUE, $1, $2, $3, $4, $5, $6)
        ON CONFLICT (id) DO UPDATE
        SET zona_horaria = EXCLUDED.zona_horaria,
            intervalo_min = EXCLUDED.intervalo_min,
-           max_citas_pendientes = EXCLUDED.max_citas_pendientes`,
-      [configuracion.zonaHoraria, configuracion.intervaloMin, configuracion.maxCitasPendientes],
+           max_citas_pendientes = EXCLUDED.max_citas_pendientes,
+           dias_de_anticipacion = EXCLUDED.dias_de_anticipacion,
+           horas_para_confirmar = EXCLUDED.horas_para_confirmar,
+           citas_por_conexion_al_dia = EXCLUDED.citas_por_conexion_al_dia`,
+      [
+        configuracion.zonaHoraria,
+        configuracion.intervaloMin,
+        configuracion.maxCitasPendientes,
+        configuracion.diasDeAnticipacion,
+        configuracion.horasParaConfirmar,
+        configuracion.citasPorConexionAlDia,
+      ],
     );
     await this.baseDeDatos.query('DELETE FROM horario_semanal');
     for (const dia of dias) {

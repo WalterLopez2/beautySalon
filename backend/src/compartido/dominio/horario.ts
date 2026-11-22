@@ -12,6 +12,12 @@ export interface ConfiguracionDelSalon {
   // Cuantas citas por venir (pendientes o confirmadas) puede tener una misma
   // clienta. Evita que alguien acapare la agenda.
   maxCitasPendientes: number;
+  // Con cuantos dias de anticipacion se puede agendar.
+  diasDeAnticipacion: number;
+  // Una solicitud sin confirmar en este plazo libera su hora.
+  horasParaConfirmar: number;
+  // Citas para un mismo dia desde una misma conexion a internet (IP).
+  citasPorConexionAlDia: number;
 }
 
 export interface HorarioDelDia {
@@ -37,9 +43,10 @@ export interface MomentoDelSalon {
 export const INTERVALO_MINIMO = 5;
 export const INTERVALO_MAXIMO = 240;
 export const MAX_CITAS_PENDIENTES_TOPE = 50;
-// Nadie puede llenar la agenda de los proximos anos. Debe coincidir con
-// `plazoDeReserva.ts` del frontend.
-export const DIAS_MAXIMOS_DE_ANTICIPACION = 60;
+// No son las reglas: son los bordes dentro de los que la duena elige las suyas.
+export const DIAS_DE_ANTICIPACION_TOPE = 365;
+export const HORAS_PARA_CONFIRMAR_TOPE = 720; // 30 dias
+export const CITAS_POR_CONEXION_TOPE = 50;
 const DIAS_POR_SEMANA = 7;
 
 // ----- Reglas que usa el agendamiento -----
@@ -82,8 +89,8 @@ export function yaPaso(fecha: string, inicioMin: number, ahora: MomentoDelSalon)
   return fecha < ahora.fecha || (fecha === ahora.fecha && inicioMin <= ahora.minuto);
 }
 
-export function esDemasiadoLejos(fecha: string, ahora: MomentoDelSalon): boolean {
-  return diasEntre(ahora.fecha, fecha) > DIAS_MAXIMOS_DE_ANTICIPACION;
+export function esDemasiadoLejos(fecha: string, ahora: MomentoDelSalon, diasDeAnticipacion: number): boolean {
+  return diasEntre(ahora.fecha, fecha) > diasDeAnticipacion;
 }
 
 // ----- Reglas que usa la duena al guardar su horario -----
@@ -109,6 +116,16 @@ export function validarHorarioSemanal({ configuracion, dias }: HorarioSemanal): 
   }
   if (configuracion.maxCitasPendientes < 1 || configuracion.maxCitasPendientes > MAX_CITAS_PENDIENTES_TOPE) {
     errores.push(`El maximo de citas pendientes por clienta debe estar entre 1 y ${MAX_CITAS_PENDIENTES_TOPE}.`);
+  }
+
+  if (configuracion.diasDeAnticipacion < 1 || configuracion.diasDeAnticipacion > DIAS_DE_ANTICIPACION_TOPE) {
+    errores.push(`Los dias de anticipacion deben estar entre 1 y ${DIAS_DE_ANTICIPACION_TOPE}.`);
+  }
+  if (configuracion.horasParaConfirmar < 1 || configuracion.horasParaConfirmar > HORAS_PARA_CONFIRMAR_TOPE) {
+    errores.push(`Las horas para confirmar deben estar entre 1 y ${HORAS_PARA_CONFIRMAR_TOPE}.`);
+  }
+  if (configuracion.citasPorConexionAlDia < 1 || configuracion.citasPorConexionAlDia > CITAS_POR_CONEXION_TOPE) {
+    errores.push(`Las citas por conexion al dia deben estar entre 1 y ${CITAS_POR_CONEXION_TOPE}.`);
   }
 
   const vistos = new Set<number>();

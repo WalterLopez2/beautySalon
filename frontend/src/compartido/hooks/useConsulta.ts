@@ -1,11 +1,11 @@
 // Patron comun de "traer datos y mostrarlos": carga, error, recargar y
-// descartar respuestas viejas. Los hooks del panel solo dicen QUE consultar.
+// descartar respuestas viejas. Los hooks de las dos vistas solo dicen QUE consultar.
 //
 // `consultar` debe venir de `useCallback`: cuando cambia (otra fecha, otra
 // clienta), se vuelve a consultar. Si es null, no se consulta nada.
 
 import { useCallback, useEffect, useState } from 'react'
-import { mensajeDeError } from '../../compartido/utils/errores.ts'
+import { mensajeDeError } from '../utils/errores.ts'
 
 export interface Consulta<T> {
   datos: T

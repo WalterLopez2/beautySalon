@@ -12,19 +12,24 @@ const EQUIPOS_POR_RED = 5;
 interface Cuenta {
   limitador: LimitadorDeIntentos;
   clave: string;
+  holgura: number; // cuantas veces el limite de un equipo
 }
 
 export class LimitadorPorIp {
+  private readonly regla: ReglaDeLimite;
   private readonly porEquipo: LimitadorDeIntentos;
   private readonly porRed: LimitadorDeIntentos;
 
   constructor(regla: ReglaDeLimite) {
+    this.regla = regla;
     this.porEquipo = new LimitadorDeIntentos(regla);
     this.porRed = new LimitadorDeIntentos({ ...regla, intentos: regla.intentos * EQUIPOS_POR_RED });
   }
 
-  exigirDisponible(ip: string, sujeto = ''): void {
-    for (const { limitador, clave } of this.cuentasDe(ip, sujeto)) limitador.exigirDisponible(clave);
+  exigirDisponible(ip: string, sujeto = '', intentos: number = this.regla.intentos): void {
+    for (const { limitador, clave, holgura } of this.cuentasDe(ip, sujeto)) {
+      limitador.exigirDisponible(clave, intentos * holgura);
+    }
   }
 
   registrar(ip: string, sujeto = ''): void {
@@ -32,8 +37,8 @@ export class LimitadorPorIp {
   }
 
   // Revisa todas las cuentas antes de sumar en alguna.
-  consumir(ip: string, sujeto = ''): void {
-    this.exigirDisponible(ip, sujeto);
+  consumir(ip: string, sujeto = '', intentos: number = this.regla.intentos): void {
+    this.exigirDisponible(ip, sujeto, intentos);
     this.registrar(ip, sujeto);
   }
 
@@ -47,8 +52,8 @@ export class LimitadorPorIp {
 
   private cuentasDe(ip: string, sujeto: string): Cuenta[] {
     const { equipo, red } = origenDeRed(ip);
-    const cuentas = [{ limitador: this.porEquipo, clave: `${sujeto}|${equipo}` }];
-    if (red) cuentas.push({ limitador: this.porRed, clave: `${sujeto}|${red}` });
+    const cuentas = [{ limitador: this.porEquipo, clave: `${sujeto}|${equipo}`, holgura: 1 }];
+    if (red) cuentas.push({ limitador: this.porRed, clave: `${sujeto}|${red}`, holgura: EQUIPOS_POR_RED });
     return cuentas;
   }
 }

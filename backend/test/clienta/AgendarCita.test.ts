@@ -28,6 +28,7 @@ const configuracionDelSalon: ConfiguracionDelSalon = {
   zonaHoraria: 'America/Tegucigalpa',
   intervaloMin: 30,
   maxCitasPendientes: 2,
+  diasDeAnticipacion: 60, horasParaConfirmar: 24, citasPorConexionAlDia: 5,
 };
 const nueveASeis: HorarioDelDia = { aperturaMin: 9 * 60, cierreMin: 18 * 60 };
 
@@ -262,6 +263,13 @@ describe('AgendarCita', () => {
 
     await expect(caso.ejecutar({ ...solicitud, fecha })).rejects.toThrow('60 dias');
     expect(repositorios.citas.crear).not.toHaveBeenCalled();
+  });
+
+  it('usa la anticipacion que puso la duena, no una fija', async () => {
+    const { caso } = crearEscenario({ configuracion: { ...configuracionDelSalon, diasDeAnticipacion: 3 } });
+
+    await expect(caso.ejecutar({ ...solicitud, fecha: '2026-11-13' })).resolves.toBeDefined();
+    await expect(caso.ejecutar({ ...solicitud, fecha: '2026-11-14' })).rejects.toThrow('3 dias');
   });
 
   it('rechaza un telefono demasiado corto', async () => {

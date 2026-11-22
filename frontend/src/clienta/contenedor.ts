@@ -9,9 +9,12 @@ import { ClienteHttp } from '../compartido/http/clienteHttp.ts'
 import { AgendarCita } from './features/agendamiento/AgendarCita.ts'
 import { RepositorioCitasHttp } from './features/agendamiento/repositorioCitas.ts'
 import type { RepositorioCitas } from './features/agendamiento/repositorioCitas.ts'
+import { RepositorioSalonHttp } from './features/salon/repositorioSalon.ts'
+import type { RepositorioSalon } from './features/salon/repositorioSalon.ts'
 import { ConsultarHistorial } from './features/historial/ConsultarHistorial.ts'
 
 export interface ContenedorClienta {
+  repositorioSalon: RepositorioSalon
   repositorioServicios: RepositorioServicios
   repositorioCitas: RepositorioCitas
   agendarCita: AgendarCita
@@ -23,6 +26,7 @@ function crearContenedor(urlBase: string): ContenedorClienta {
   const repositorioCitas = new RepositorioCitasHttp(http)
 
   return {
+    repositorioSalon: new RepositorioSalonHttp(http),
     repositorioServicios: new RepositorioServiciosHttp(http),
     repositorioCitas,
     agendarCita: new AgendarCita(repositorioCitas),

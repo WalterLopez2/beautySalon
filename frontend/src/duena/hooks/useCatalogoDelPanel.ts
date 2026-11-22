@@ -9,7 +9,7 @@ import type { BorradorDeServicio } from '../features/catalogo/BorradorDeServicio
 import type { GuardarServicio } from '../features/catalogo/GuardarServicio.ts'
 import type { RepositorioCatalogo } from '../features/catalogo/repositorioCatalogo.ts'
 import type { ServicioDelPanel } from '../features/catalogo/ServicioDelPanel.ts'
-import { useConsulta } from './useConsulta.ts'
+import { useConsulta } from '../../compartido/hooks/useConsulta.ts'
 
 interface CatalogoDelPanelEnPantalla {
   servicios: readonly ServicioDelPanel[]

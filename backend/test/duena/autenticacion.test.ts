@@ -273,6 +273,19 @@ describe('LimitadorDeIntentos', () => {
     expect(() => limitador.consumir('ip')).not.toThrow();
   });
 
+  it('si bajan el tope, dice cuanto falta de verdad para poder reintentar', () => {
+    let ahora = 0;
+    const limitador = new LimitadorDeIntentos({ intentos: 5, ventanaMs: 10_000 }, () => ahora);
+    for (ahora = 0; ahora < 3000; ahora += 1000) limitador.registrar('ip');
+
+    try {
+      limitador.exigirDisponible('ip', 1);
+      expect.fail('deberia haber fallado');
+    } catch (error) {
+      expect((error as DemasiadosIntentos).segundosParaReintentar).toBe(9); // hasta que salga el ultimo
+    }
+  });
+
   it('indica cuantos segundos esperar', () => {
     const limitador = new LimitadorDeIntentos({ intentos: 1, ventanaMs: 30_000 }, () => 0);
     limitador.consumir('ip');

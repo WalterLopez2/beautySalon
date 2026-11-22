@@ -3,7 +3,7 @@ import { VencerCitasPendientes } from '../../src/compartido/citas/VencerCitasPen
 import { horarioDisponible, sePuedeCambiarDeEstado, type Cita } from '../../src/compartido/dominio/citas';
 import type { ConfiguracionDelSalon } from '../../src/compartido/dominio/horario';
 
-const configuracion: ConfiguracionDelSalon = { zonaHoraria: 'America/Tegucigalpa', intervaloMin: 30, maxCitasPendientes: 2 };
+const configuracion: ConfiguracionDelSalon = { zonaHoraria: 'America/Tegucigalpa', intervaloMin: 30, maxCitasPendientes: 2, diasDeAnticipacion: 60, horasParaConfirmar: 24, citasPorConexionAlDia: 5 };
 const AHORA = new Date('2026-11-22T20:30:00Z'); // 14:30 en Honduras
 
 function crearCaso(guardada: ConfiguracionDelSalon | null) {
@@ -21,6 +21,14 @@ describe('VencerCitasPendientes', () => {
       fecha: '2026-11-22',
       minuto: 14 * 60 + 30,
     });
+  });
+
+  it('usa el plazo que puso la duena, no uno fijo', async () => {
+    const { caso, citas } = crearCaso({ ...configuracion, horasParaConfirmar: 2 });
+
+    await caso.ejecutar();
+
+    expect(citas.vencerPendientes).toHaveBeenCalledWith(new Date('2026-11-22T18:30:00Z'), expect.anything());
   });
 
   it('no hace nada si el salon todavia no se configuro', async () => {

@@ -19,19 +19,21 @@ Una aplicación web con dos vistas:
 
 **Para la clienta**
 - Catálogo de servicios con precios y duración
-- Agenda en línea que solo ofrece horas realmente libres, hasta con 60 días de anticipación
+- Agenda en línea que solo ofrece horas realmente libres, con la anticipación que define la dueña
+- Avisos de carga, error (con reintento) y salón cerrado, y página adaptada a celular
 - "Mis citas" con teléfono + código de consulta (cada cita tiene su propio código)
 
 **Para la dueña**
 - Agenda del día: confirmar, cancelar y marcar citas como atendidas
-- Estados de cita: pendiente → confirmada → atendida (o cancelada). Una pendiente que no se confirma en 24 horas queda vencida y libera su hora
+- Estados de cita: pendiente → confirmada → atendida (o cancelada). Una pendiente que no se confirma en el plazo que define la dueña queda vencida y libera su hora
 - Lista de solicitudes por confirmar de todos los días, con aviso de teléfono sin verificar
 - Catálogo de servicios: crear, editar y pausar
-- Horario semanal, intervalo entre turnos, zona horaria y máximo de citas pendientes por clienta
+- Mi salón: nombre, nombre corto, eslogan, descripción y WhatsApp de la página pública
+- Horario semanal, intervalo entre turnos, zona horaria y reglas de reserva: máximo de citas por clienta, días de anticipación, horas para confirmar y citas por conexión al día
 - Días libres y horas bloqueadas, con aviso de las citas afectadas
 - Historial por clienta y resumen de ingresos por día y por semana
 
-**El salón lo configura la dueña:** horarios, servicios, precios y máximo de citas salen del panel. Solo las protecciones contra abuso (plazos y límites de intentos) están fijas en el código. Mientras no configure su horario, el salón aparece cerrado.
+**El salón lo configura la dueña:** nombre, textos, contacto, horarios, servicios, precios y reglas de reserva salen del panel. En el código solo quedan las protecciones técnicas (intentos de login, tamaños máximos, tiempos de espera) y el país (lempiras y teléfonos de Honduras). Mientras no configure su horario, el salón aparece cerrado.
 
 ## Estado actual
 

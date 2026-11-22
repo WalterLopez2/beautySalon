@@ -1,29 +1,33 @@
-// Paso de la hora: consulta la disponibilidad del dia elegido y decide que
-// mostrar. Las horas posibles las calcula `AgendaDelDia` con el horario que
-// configuro la duena; aqui solo se traduce cada estado a un mensaje.
+// Paso de la hora: decide que mostrar segun la disponibilidad del dia. Las
+// horas posibles las calcula `AgendaDelDia` con el horario que configuro la
+// duena; aqui solo se traduce cada estado a un mensaje.
 
 import type { Servicio } from '../../../compartido/dominio/Servicio.ts'
-import { ultimaFechaParaAgendar } from '../../../compartido/dominio/plazoDeReserva.ts'
 import { esFechaValida } from '../../../compartido/utils/fecha.ts'
-import { useAgendaDelDia } from '../../hooks/useAgendaDelDia.ts'
+import type { PlazoDeReserva } from '../../features/agendamiento/PlazoDeReserva.ts'
+import type { DisponibilidadEnPantalla } from '../../hooks/useAgendaDelDia.ts'
+import { AvisoConReintento } from '../AvisoConReintento.tsx'
 import { OpcionesDeHora } from './OpcionesDeHora.tsx'
 
 interface Props {
   servicio: Servicio | null
   fecha: string
+  plazo: PlazoDeReserva
+  disponibilidad: DisponibilidadEnPantalla
   horaElegida: string
   alElegir: (hora: string) => void
 }
 
-export function SelectorDeHora({ servicio, fecha, horaElegida, alElegir }: Props) {
-  const { horasDisponibles, salonAbierto, cargando, error } = useAgendaDelDia(fecha, servicio)
+export function SelectorDeHora({ servicio, fecha, plazo, disponibilidad, horaElegida, alElegir }: Props) {
+  const { horasDisponibles, salonAbierto, cargando, error, recargar } = disponibilidad
 
   if (!servicio || !esFechaValida(fecha)) {
     return <p className="paso__aviso">Primero elige el servicio y el dia.</p>
   }
 
-  if (fecha > ultimaFechaParaAgendar()) {
-    return <p className="paso__aviso">Todavia no se puede agendar para ese dia. Elige uno mas cercano.</p>
+  const errorDePlazo = plazo.errorDe(fecha)
+  if (errorDePlazo) {
+    return <p className="paso__aviso">{errorDePlazo}</p>
   }
 
   if (cargando) {
@@ -31,7 +35,7 @@ export function SelectorDeHora({ servicio, fecha, horaElegida, alElegir }: Props
   }
 
   if (error) {
-    return <p className="paso__aviso" role="alert">{error}</p>
+    return <AvisoConReintento mensaje={error} alReintentar={recargar} />
   }
 
   if (!salonAbierto) {

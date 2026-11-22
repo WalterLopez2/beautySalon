@@ -5,6 +5,7 @@
 import { Router, type Request } from 'express';
 import { aCitaDTO } from '../compartido/citas/presentacion';
 import type { CitaRegistrada } from '../compartido/citas/repositorioCitas';
+import type { ConfiguracionDelSalon } from '../compartido/dominio/horario';
 import { LARGO_MAXIMO } from '../compartido/dominio/limitesDeDatos';
 import { esTelefonoValido, normalizarTelefono, TELEFONO_INVALIDO } from '../compartido/dominio/telefono';
 import { DatosInvalidos } from '../compartido/errores';
@@ -22,10 +23,13 @@ import { hashDeCodigo } from '../compartido/seguridad/codigosDeConsulta';
 import type { LimitadorPorIp } from '../compartido/seguridad/LimitadorPorIp';
 import type { Servicio } from '../compartido/servicios/repositorioServicios';
 import type { CitaAgendada, SolicitudDeCita } from './AgendarCita';
+import type { SalonPublico } from './ConsultarSalon';
 import { aAgendaPublica, type AgendaDelDiaPublica } from './presentacion';
 
 export interface DependenciasDeLaClienta {
   consultarAgenda: { ejecutar(fecha: string): Promise<AgendaDelDiaPublica> };
+  consultarSalon: { ejecutar(): Promise<SalonPublico> };
+  horario: { obtenerConfiguracion(): Promise<ConfiguracionDelSalon | null> };
   servicios: { listarActivos(): Promise<Servicio[]> };
   citas: { listarPorTelefonoYCodigo(telefono: string, codigoHash: string): Promise<CitaRegistrada[]> };
   agendarCita: { ejecutar(solicitud: SolicitudDeCita): Promise<CitaAgendada> };
@@ -42,10 +46,15 @@ interface ConsultaDeHistorial {
 }
 
 export function crearRutasDeLaClienta(dependencias: DependenciasDeLaClienta): Router {
-  const { consultarAgenda, servicios, citas, agendarCita, limites } = dependencias;
+  const { consultarAgenda, consultarSalon, horario, servicios, citas, agendarCita, limites } = dependencias;
   const rutas = Router();
   // Todo lo de /citas es privado o cambia a cada momento (codigo, citas, horas).
   rutas.use('/citas', sinCache);
+
+  // Sin cache: lo que la duena cambia en el panel se ve al recargar.
+  rutas.get('/salon', sinCache, async (_peticion, respuesta) => {
+    respuesta.json(await consultarSalon.ejecutar());
+  });
 
   rutas.get('/servicios', async (_peticion, respuesta) => {
     respuesta.json(await servicios.listarActivos());
@@ -60,7 +69,9 @@ export function crearRutasDeLaClienta(dependencias: DependenciasDeLaClienta): Ro
     const ip = ipDe(peticion);
     limites.agendar.consumir(ip);
     const solicitud = leerSolicitudDeCita(peticion.body);
-    limites.agendarPorFecha.consumir(ip, solicitud.fecha);
+    const configuracion = await horario.obtenerConfiguracion();
+    // Sin configurar no hay tope que aplicar: AgendarCita igual lo rechaza.
+    limites.agendarPorFecha.consumir(ip, solicitud.fecha, configuracion?.citasPorConexionAlDia);
     const { cita, codigoDeConsulta } = await agendarCita.ejecutar(solicitud).catch((error: unknown) => {
       limites.agendarPorFecha.devolver(ip, solicitud.fecha); // el cupo del dia es para citas hechas
       throw error;

@@ -6,8 +6,16 @@
 
 import type { FranjaOcupada } from '../compartido/citas/repositorioCitas';
 import { cierraElDia, franjasBloqueadas, type Bloqueo } from '../compartido/dominio/bloqueos';
-import { diaDeLaSemana, type ConfiguracionDelSalon, type HorarioDelDia } from '../compartido/dominio/horario';
+import {
+  diaDeLaSemana,
+  esDemasiadoLejos,
+  momentoEn,
+  type ConfiguracionDelSalon,
+  type HorarioDelDia,
+} from '../compartido/dominio/horario';
 import type { AgendaDelDiaPublica } from './presentacion';
+
+const ULTIMO_MINUTO_DEL_DIA = 24 * 60 - 1;
 
 export interface FuentesDeLaAgenda {
   horario: {
@@ -20,9 +28,11 @@ export interface FuentesDeLaAgenda {
 
 export class ConsultarAgendaDelDia {
   private readonly fuentes: FuentesDeLaAgenda;
+  private readonly reloj: () => Date;
 
-  constructor(fuentes: FuentesDeLaAgenda) {
+  constructor(fuentes: FuentesDeLaAgenda, reloj: () => Date = () => new Date()) {
     this.fuentes = fuentes;
+    this.reloj = reloj;
   }
 
   async ejecutar(fecha: string): Promise<AgendaDelDiaPublica> {
@@ -34,10 +44,18 @@ export class ConsultarAgendaDelDia {
       citas.ocupadasEl(fecha),
     ]);
 
-    const diaCerrado = cierraElDia(bloqueosDelDia);
+    const ahora = configuracion && momentoEn(configuracion.zonaHoraria, this.reloj());
+    const fueraDelPlazo =
+      configuracion !== null &&
+      ahora !== null &&
+      (fecha < ahora.fecha || esDemasiadoLejos(fecha, ahora, configuracion.diasDeAnticipacion));
+    const diaCerrado = fueraDelPlazo || cierraElDia(bloqueosDelDia);
+
     return {
       fecha,
       configuracion,
+      // La hora en curso ya empezo: se ofrece desde el minuto siguiente.
+      desdeMin: ahora?.fecha === fecha ? Math.min(ahora.minuto + 1, ULTIMO_MINUTO_DEL_DIA) : null,
       horario: diaCerrado ? null : horarioDelDia,
       ocupadas: diaCerrado ? [] : [...ocupadas, ...franjasBloqueadas(bloqueosDelDia)],
     };

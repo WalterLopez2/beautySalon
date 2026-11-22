@@ -1,6 +1,7 @@
 // Clienta registrada en el salon, tal como la ve la duena.
 
 import type { ClientaDTO } from '../../../compartido/tipos/api.ts'
+import { enlaceDeWhatsApp } from '../../../compartido/utils/whatsapp.ts'
 import { normalizarTexto } from '../../../compartido/utils/texto.ts'
 
 export class Clienta {
@@ -32,12 +33,8 @@ export class Clienta {
     return normalizarTexto(this.nombre).includes(busqueda) || this.telefono.includes(busqueda)
   }
 
-  // Enlace directo para escribirle por WhatsApp (codigo de pais de Honduras).
+  // Enlace directo para escribirle por WhatsApp.
   enlaceDeWhatsApp(): string {
-    const digitos = this.telefono.replace(/\D/g, '')
-    const conCodigo = digitos.startsWith(CODIGO_HONDURAS) ? digitos : `${CODIGO_HONDURAS}${digitos}`
-    return `https://wa.me/${conCodigo}`
+    return enlaceDeWhatsApp(this.telefono)
   }
 }
-
-const CODIGO_HONDURAS = '504'

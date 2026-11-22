@@ -3,10 +3,6 @@
 
 export type EstadoCita = 'pendiente' | 'confirmada' | 'atendida' | 'cancelada' | 'vencida';
 
-// Una solicitud que la duena no confirma en este plazo libera su hora. Debe
-// coincidir con `Cita.ts` del frontend.
-export const HORAS_PARA_CONFIRMAR = 24;
-
 const ESTADOS_QUE_LIBERAN: readonly EstadoCita[] = ['cancelada', 'vencida'];
 
 export interface Cita {

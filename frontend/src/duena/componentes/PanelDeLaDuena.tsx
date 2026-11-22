@@ -13,6 +13,7 @@ import { SeccionCatalogo } from './catalogo/SeccionCatalogo.tsx'
 import { SeccionClientas } from './clientas/SeccionClientas.tsx'
 import { SeccionHorario } from './horario/SeccionHorario.tsx'
 import { SeccionIngresos } from './ingresos/SeccionIngresos.tsx'
+import { SeccionSalon } from './salon/SeccionSalon.tsx'
 
 interface Props {
   sesion: Sesion
@@ -43,6 +44,7 @@ export function PanelDeLaDuena({ sesion, aviso, onCerrarSesion }: Props) {
         {seccion === 'catalogo' && <SeccionCatalogo />}
         {seccion === 'horario' && <SeccionHorario />}
         {seccion === 'bloqueos' && <SeccionBloqueos fecha={fecha} />}
+        {seccion === 'salon' && <SeccionSalon />}
         {seccion === 'ingresos' && <SeccionIngresos fecha={fecha} onCambiarFecha={setFecha} />}
       </main>
     </div>

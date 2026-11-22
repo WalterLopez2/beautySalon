@@ -1,13 +1,17 @@
 // Barra superior fija con la marca y los enlaces a cada seccion.
-// Solo presentacion: no tiene estado ni logica.
+// Solo presentacion: la marca la escribe la duena en el panel.
 
 import { ENLACES_DEL_MENU, SECCIONES } from './secciones.ts'
 
-export function Encabezado() {
+interface Props {
+  marca: string
+}
+
+export function Encabezado({ marca }: Props) {
   return (
     <nav className="encabezado" aria-label="Principal">
       <div className="contenedor encabezado__contenido">
-        <span className="encabezado__marca">DELMY</span>
+        <span className="encabezado__marca">{marca}</span>
 
         <ul className="encabezado__enlaces">
           {ENLACES_DEL_MENU.map((enlace) => (

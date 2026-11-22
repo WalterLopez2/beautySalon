@@ -26,7 +26,28 @@ export interface AgendaDelDiaDTO {
   apertura: string | null // HH:MM
   cierre: string | null // HH:MM
   intervaloMin: number | null
+  noAntesDe: string | null // HH:MM; solo hoy, con el reloj del salon
   ocupadas: FranjaOcupadaDTO[]
+}
+
+// Lo que la duena escribe en "Mi salon" y muestra la pagina publica.
+export interface InformacionDelSalonDTO {
+  nombre: string
+  marca: string | null // nombre corto del encabezado
+  eslogan: string | null
+  descripcion: string | null
+  telefono: string | null // WhatsApp
+}
+
+export interface PlazoDeReservaDTO {
+  hoy: string // YYYY-MM-DD en la zona del salon
+  ultimaFecha: string
+  horasParaConfirmar: number
+}
+
+export interface SalonDTO {
+  informacion: InformacionDelSalonDTO | null // null = la duena todavia no la llena
+  reservas: PlazoDeReservaDTO | null // null = no recibe reservas
 }
 
 export interface CitaDTO {
@@ -131,6 +152,9 @@ export interface HorarioSemanalDTO {
   zonaHoraria: string | null
   intervaloMin: number | null
   maxCitasPendientes: number | null // citas por venir que puede tener una misma clienta
+  diasDeAnticipacion: number | null
+  horasParaConfirmar: number | null
+  citasPorConexionAlDia: number | null
   dias: DiaDeAtencionDTO[] // un dia que no esta en la lista = cerrado
 }
 
@@ -138,6 +162,9 @@ export interface GuardarHorarioDTO {
   zonaHoraria: string
   intervaloMin: number
   maxCitasPendientes: number
+  diasDeAnticipacion: number
+  horasParaConfirmar: number
+  citasPorConexionAlDia: number
   dias: DiaDeAtencionDTO[]
 }
 

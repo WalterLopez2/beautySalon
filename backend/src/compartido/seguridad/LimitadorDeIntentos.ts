@@ -27,10 +27,11 @@ export class LimitadorDeIntentos {
   }
 
   // Falla si la clave ya llego al limite. No cuenta un intento nuevo.
-  exigirDisponible(clave: string): void {
+  // `intentos` reemplaza al de la regla cuando el limite lo elige la duena.
+  exigirDisponible(clave: string, intentos: number = this.regla.intentos): void {
     const recientes = this.recientes(clave);
-    if (recientes.length >= this.regla.intentos) {
-      const liberaEn = recientes[0] + this.regla.ventanaMs - this.ahora();
+    if (recientes.length >= intentos) {
+      const liberaEn = recientes[recientes.length - intentos] + this.regla.ventanaMs - this.ahora();
       throw new DemasiadosIntentos(Math.max(1, Math.ceil(liberaEn / 1000)));
     }
   }

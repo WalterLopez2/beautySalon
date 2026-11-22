@@ -9,7 +9,7 @@ import { AgendaDelPanel } from '../features/agenda/AgendaDelPanel.ts'
 import type { CambiarEstadoDeCita } from '../features/agenda/CambiarEstadoDeCita.ts'
 import type { CitaDelPanel } from '../features/agenda/CitaDelPanel.ts'
 import type { RepositorioAgenda } from '../features/agenda/repositorioAgenda.ts'
-import { useConsulta } from './useConsulta.ts'
+import { useConsulta } from '../../compartido/hooks/useConsulta.ts'
 
 interface AgendaEnPantalla {
   agenda: AgendaDelPanel

@@ -1,22 +1,13 @@
-// Disponibilidad de un dia para un servicio. Si la fecha es hoy, no ofrece
-// horas que ya pasaron.
-//
-// Cada respuesta se guarda junto con la fecha que pidio. Asi "cargando" no es
-// un estado aparte que haya que mantener sincronizado: se deduce de que la
-// fecha en pantalla todavia no tiene respuesta.
+// Disponibilidad de un dia para un servicio. Que horas ya pasaron lo dice el
+// servidor, con el reloj del salon y no el del celular.
 
-import { useEffect, useState } from 'react'
-import { AgendaDelDia } from '../features/agendamiento/AgendaDelDia.ts'
-import type { RepositorioCitas } from '../features/agendamiento/repositorioCitas.ts'
+import { useMemo } from 'react'
 import type { Servicio } from '../../compartido/dominio/Servicio.ts'
+import { useConsulta } from '../../compartido/hooks/useConsulta.ts'
+import { esFechaValida } from '../../compartido/utils/fecha.ts'
 import { contenedor } from '../contenedor.ts'
-import { esFechaValida, hoy } from '../../compartido/utils/fecha.ts'
-import { mensajeDeError } from '../../compartido/utils/errores.ts'
-import { horaActual } from '../../compartido/utils/hora.ts'
-
-type RespuestaDelDia =
-  | { fecha: string; agenda: AgendaDelDia }
-  | { fecha: string; error: string }
+import type { AgendaDelDia } from '../features/agendamiento/AgendaDelDia.ts'
+import type { RepositorioCitas } from '../features/agendamiento/repositorioCitas.ts'
 
 export interface DisponibilidadEnPantalla {
   horasDisponibles: string[]
@@ -24,6 +15,7 @@ export interface DisponibilidadEnPantalla {
   salonAbierto: boolean
   cargando: boolean
   error: string | null
+  recargar: () => void
 }
 
 export function useAgendaDelDia(
@@ -31,44 +23,21 @@ export function useAgendaDelDia(
   servicio: Servicio | null,
   repositorio: RepositorioCitas = contenedor.repositorioCitas,
 ): DisponibilidadEnPantalla {
-  const [respuesta, setRespuesta] = useState<RespuestaDelDia | null>(null)
-
-  useEffect(() => {
-    if (!esFechaValida(fecha)) return
-
-    let vigente = true
-    repositorio
-      .agendaDe(fecha)
-      .then((agenda) => {
-        if (vigente) setRespuesta({ fecha, agenda })
-      })
-      .catch((causa: unknown) => {
-        if (vigente) setRespuesta({ fecha, error: mensajeDeError(causa) })
-      })
-
-    // Si la clienta cambia de fecha, la respuesta anterior se descarta.
-    return () => {
-      vigente = false
-    }
-  }, [fecha, repositorio])
+  // null = todavia no hay un dia que consultar.
+  const consultar = useMemo(
+    () => (esFechaValida(fecha) ? () => repositorio.agendaDe(fecha) : null),
+    [fecha, repositorio],
+  )
+  const { datos, cargando, error, recargar } = useConsulta<AgendaDelDia | null>(consultar, null)
 
   // Solo cuenta la respuesta que corresponde a la fecha que esta en pantalla.
-  const respuestaDelDia = respuesta?.fecha === fecha ? respuesta : null
-  const agenda = respuestaDelDia && 'agenda' in respuestaDelDia ? respuestaDelDia.agenda : null
-  const error = respuestaDelDia && 'error' in respuestaDelDia ? respuestaDelDia.error : null
-
-  const horasDisponibles =
-    agenda && servicio
-      ? agenda.horasDisponiblesPara(
-          servicio.duracionMin,
-          fecha === hoy() ? horaActual() : undefined,
-        )
-      : []
+  const agenda = !cargando && datos?.fecha === fecha ? datos : null
 
   return {
-    horasDisponibles,
+    horasDisponibles: agenda && servicio ? agenda.horasDisponiblesPara(servicio.duracionMin) : [],
     salonAbierto: agenda?.estaAbierto() ?? true,
-    cargando: esFechaValida(fecha) && respuestaDelDia === null,
+    cargando,
     error,
+    recargar,
   }
 }

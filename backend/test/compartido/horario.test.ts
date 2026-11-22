@@ -49,7 +49,7 @@ describe('horario del salon', () => {
 
 describe('validarHorarioSemanal', () => {
   const valido: HorarioSemanal = {
-    configuracion: { zonaHoraria: 'America/Tegucigalpa', intervaloMin: 30, maxCitasPendientes: 2 },
+    configuracion: { zonaHoraria: 'America/Tegucigalpa', intervaloMin: 30, maxCitasPendientes: 2, diasDeAnticipacion: 60, horasParaConfirmar: 24, citasPorConexionAlDia: 5 },
     dias: [{ diaSemana: 1, ...nueveASeis }],
   };
 
@@ -58,9 +58,22 @@ describe('validarHorarioSemanal', () => {
     expect(() => validarHorarioSemanal({ ...valido, dias: [] })).not.toThrow();
   });
 
+  it.each([
+    ['diasDeAnticipacion', 0],
+    ['diasDeAnticipacion', 366],
+    ['horasParaConfirmar', 0],
+    ['horasParaConfirmar', 721],
+    ['citasPorConexionAlDia', 0],
+    ['citasPorConexionAlDia', 51],
+  ])('rechaza %s = %i', (regla, valor) => {
+    const configuracion = { ...valido.configuracion, [regla]: valor };
+
+    expect(() => validarHorarioSemanal({ ...valido, configuracion })).toThrow(DatosInvalidos);
+  });
+
   it('junta todos los problemas en un solo error', () => {
     const conErrores: HorarioSemanal = {
-      configuracion: { zonaHoraria: 'Marte/Olympus', intervaloMin: 1, maxCitasPendientes: 0 },
+      configuracion: { ...valido.configuracion, zonaHoraria: 'Marte/Olympus', intervaloMin: 1, maxCitasPendientes: 0 },
       dias: [
         { diaSemana: 1, aperturaMin: 18 * 60, cierreMin: 9 * 60 },
         { diaSemana: 1, ...nueveASeis },

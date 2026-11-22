@@ -7,6 +7,8 @@ import { CitaDelPanel } from './CitaDelPanel.ts'
 export interface RepositorioAgenda {
   // Rango cerrado [desde, hasta], fechas YYYY-MM-DD.
   citasEntre(desde: string, hasta: string): Promise<CitaDelPanel[]>
+  // Lo que falta confirmar, de cualquier fecha.
+  pendientes(): Promise<CitaDelPanel[]>
   cambiarEstado(citaId: number, estado: EstadoCita): Promise<CitaDelPanel>
 }
 
@@ -20,6 +22,11 @@ export class RepositorioAgendaHttp implements RepositorioAgenda {
   async citasEntre(desde: string, hasta: string): Promise<CitaDelPanel[]> {
     const consulta = new URLSearchParams({ desde, hasta })
     const dtos = await this.http.obtener<CitaDelPanelDTO[]>(`/panel/citas?${consulta}`)
+    return dtos.map(CitaDelPanel.desdeDTO)
+  }
+
+  async pendientes(): Promise<CitaDelPanel[]> {
+    const dtos = await this.http.obtener<CitaDelPanelDTO[]>('/panel/citas/pendientes')
     return dtos.map(CitaDelPanel.desdeDTO)
   }
 

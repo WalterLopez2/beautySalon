@@ -10,6 +10,9 @@ export function aHorarioSemanalDTO(horario: HorarioSemanal | null) {
     zonaHoraria: horario?.configuracion.zonaHoraria ?? null,
     intervaloMin: horario?.configuracion.intervaloMin ?? null,
     maxCitasPendientes: horario?.configuracion.maxCitasPendientes ?? null,
+    diasDeAnticipacion: horario?.configuracion.diasDeAnticipacion ?? null,
+    horasParaConfirmar: horario?.configuracion.horasParaConfirmar ?? null,
+    citasPorConexionAlDia: horario?.configuracion.citasPorConexionAlDia ?? null,
     dias: (horario?.dias ?? []).map((dia) => ({
       diaSemana: dia.diaSemana,
       apertura: minutosAHora(dia.aperturaMin),

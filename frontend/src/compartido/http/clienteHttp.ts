@@ -47,6 +47,15 @@ export type AlPerderLaSesion = () => void
 const ENCABEZADO_PROPIO = 'X-Salon-Peticion'
 
 const SIN_CONTENIDO = 204
+const RESPUESTA_INVALIDA = 502 // llego algo que no es JSON (la pagina de error de un proxy)
+const SIN_RESPUESTA = 0
+// Un poco mas de lo que espera la API a su base de datos.
+const TIEMPO_MAXIMO_MS = 20_000
+const SIN_CONEXION = 'No se pudo conectar con el servidor. Revisa tu internet.'
+// No se puede prometer que no se guardo: la respuesta pudo perderse al volver.
+const TARDO_DEMASIADO =
+  'El servidor tardo demasiado en responder. Intenta de nuevo; si estabas guardando algo, revisa primero si se guardo.'
+const NO_SE_ENTENDIO = 'El servidor respondio algo inesperado. Intenta de nuevo en un momento.'
 const NO_AUTORIZADO = 401
 
 interface ErrorDelServidor {
@@ -86,7 +95,20 @@ export class ClienteHttp implements Http {
   }
 
   private async pedir<T>(ruta: string, opciones: RequestInit): Promise<T> {
-    const respuesta = await this.enviar(ruta, conEncabezadoPropio(opciones))
+    const limite = new AbortController()
+    const reloj = setTimeout(() => limite.abort(), TIEMPO_MAXIMO_MS)
+    try {
+      return await this.pedirConLimite<T>(ruta, { ...conEncabezadoPropio(opciones), signal: limite.signal })
+    } catch (causa) {
+      if (!limite.signal.aborted) throw causa
+      throw new ErrorDeApi(TARDO_DEMASIADO, SIN_RESPUESTA)
+    } finally {
+      clearTimeout(reloj)
+    }
+  }
+
+  private async pedirConLimite<T>(ruta: string, opciones: RequestInit): Promise<T> {
+    const respuesta = await this.enviar(ruta, opciones)
 
     if (respuesta.status === NO_AUTORIZADO) {
       this.alPerderLaSesion()
@@ -96,23 +118,27 @@ export class ClienteHttp implements Http {
     }
     // 204 = todo bien, sin cuerpo (por ejemplo, al eliminar).
     if (respuesta.status === SIN_CONTENIDO) return undefined as T
-    return (await respuesta.json()) as T
+    try {
+      return (await respuesta.json()) as T
+    } catch {
+      throw new ErrorDeApi(NO_SE_ENTENDIO, RESPUESTA_INVALIDA)
+    }
   }
 
   private async enviar(ruta: string, opciones: RequestInit): Promise<Response> {
     try {
       return await fetch(`${this.urlBase}${ruta}`, opciones)
     } catch {
-      throw new ErrorDeApi('No se pudo conectar con el servidor. Revisa tu internet.', 0)
+      throw new ErrorDeApi(SIN_CONEXION, SIN_RESPUESTA)
     }
   }
 
   private async leerMensajeDeError(respuesta: Response): Promise<string> {
     try {
       const cuerpo = (await respuesta.json()) as ErrorDelServidor
-      return cuerpo.mensaje ?? cuerpo.error ?? respuesta.statusText
+      return cuerpo.mensaje ?? cuerpo.error ?? NO_SE_ENTENDIO
     } catch {
-      return respuesta.statusText || 'Ocurrio un error inesperado.'
+      return NO_SE_ENTENDIO
     }
   }
 }

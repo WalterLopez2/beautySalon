@@ -22,6 +22,10 @@ export function esHoraValida(hora: string): boolean {
   return FORMATO_HORA.test(hora);
 }
 
+export function sumarDias(fecha: string, dias: number): string {
+  return new Date(Date.parse(`${fecha}T00:00:00Z`) + dias * MILISEGUNDOS_POR_DIA).toISOString().slice(0, 10);
+}
+
 // Cantidad de dias entre dos fechas validas (hasta - desde).
 export function diasEntre(desde: string, hasta: string): number {
   return (Date.parse(`${hasta}T00:00:00Z`) - Date.parse(`${desde}T00:00:00Z`)) / MILISEGUNDOS_POR_DIA;

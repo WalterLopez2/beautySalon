@@ -1,3 +1,18 @@
-.app-shell {
-  min-height: 100svh;
+/* Pantallas de antes de que exista una vista: cargando o no se pudo cargar. */
+
+.pantalla-de-carga,
+.pantalla-de-error {
+  padding: 30vh 24px 0;
+  text-align: center;
+}
+
+.pantalla-de-error button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 24px;
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+  font: inherit;
+  cursor: pointer;
 }

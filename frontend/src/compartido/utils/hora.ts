@@ -29,8 +29,3 @@ export function minutosAHora(minutos: number): string {
 function dosDigitos(valor: number): string {
   return String(valor).padStart(2, '0')
 }
-
-export function horaActual(): string {
-  const ahora = new Date()
-  return `${dosDigitos(ahora.getHours())}:${dosDigitos(ahora.getMinutes())}`
-}

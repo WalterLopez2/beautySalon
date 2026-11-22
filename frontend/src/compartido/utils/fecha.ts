@@ -36,10 +36,6 @@ export function hoy(): string {
   return aFechaISO(new Date())
 }
 
-export function esAnteriorAHoy(fecha: string): boolean {
-  return fecha < hoy()
-}
-
 export function sumarDias(fecha: string, dias: number): string {
   const resultado = aFechaLocal(fecha)
   resultado.setDate(resultado.getDate() + dias)

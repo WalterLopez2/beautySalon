@@ -182,6 +182,11 @@ export class RepositorioCitas {
     return this.listarDonde('c.cliente_id = $1', [clienteId]);
   }
 
+  // De cualquier fecha: el plazo para agendar lo cambia la duena cuando quiera.
+  async listarPendientes(): Promise<CitaRegistrada[]> {
+    return this.listarDonde("c.estado = 'pendiente'", []);
+  }
+
   // Rango cerrado [desde, hasta].
   async listarEntre(desde: string, hasta: string): Promise<CitaRegistrada[]> {
     return this.listarDonde('c.fecha BETWEEN $1 AND $2', [desde, hasta]);

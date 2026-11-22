@@ -9,12 +9,13 @@ export interface AgendaDelDiaPublica {
   fecha: string;
   configuracion: ConfiguracionDelSalon | null;
   horario: HorarioDelDia | null; // null = el salon no abre ese dia
+  desdeMin: number | null; // solo hoy: antes de este minuto ya paso
   ocupadas: FranjaOcupada[];
 }
 
 // Con todo lo necesario para que el frontend calcule las horas libres sin
 // conocer ningun horario de antemano.
-export function aAgendaPublica({ fecha, configuracion, horario, ocupadas }: AgendaDelDiaPublica) {
+export function aAgendaPublica({ fecha, configuracion, horario, desdeMin, ocupadas }: AgendaDelDiaPublica) {
   const abierto = configuracion !== null && horario !== null;
 
   return {
@@ -23,6 +24,7 @@ export function aAgendaPublica({ fecha, configuracion, horario, ocupadas }: Agen
     apertura: abierto ? minutosAHora(horario.aperturaMin) : null,
     cierre: abierto ? minutosAHora(horario.cierreMin) : null,
     intervaloMin: configuracion?.intervaloMin ?? null,
+    noAntesDe: desdeMin === null ? null : minutosAHora(desdeMin),
     ocupadas: ocupadas.map((franja) => ({
       inicio: minutosAHora(franja.inicioMin),
       duracionMin: franja.duracionMin,

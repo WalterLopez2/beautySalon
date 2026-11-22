@@ -5,7 +5,7 @@ import { useCallback, useState } from 'react'
 import { contenedorDuena } from '../contenedor.ts'
 import { DirectorioDeClientas } from '../features/clientas/DirectorioDeClientas.ts'
 import type { RepositorioClientas } from '../features/clientas/repositorioClientas.ts'
-import { useConsulta } from './useConsulta.ts'
+import { useConsulta } from '../../compartido/hooks/useConsulta.ts'
 
 interface ClientasEnPantalla {
   clientas: DirectorioDeClientas

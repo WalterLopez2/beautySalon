@@ -5,12 +5,14 @@
 import type { DependenciasDeLaApp } from './app';
 import { AgendarCita } from './clienta/AgendarCita';
 import { ConsultarAgendaDelDia } from './clienta/ConsultarAgendaDelDia';
+import { ConsultarSalon } from './clienta/ConsultarSalon';
 import type { BaseDeDatos } from './compartido/baseDeDatos/baseDeDatos';
 import { RepositorioBloqueos } from './compartido/bloqueos/repositorioBloqueos';
 import { RepositorioCitas } from './compartido/citas/repositorioCitas';
 import { VencerCitasPendientes } from './compartido/citas/VencerCitasPendientes';
 import { RepositorioClientes } from './compartido/clientes/repositorioClientes';
 import { RepositorioHorario } from './compartido/horario/repositorioHorario';
+import { RepositorioSalon } from './compartido/salon/repositorioSalon';
 import { LimitadorPorIp } from './compartido/seguridad/LimitadorPorIp';
 import { LIMITES } from './compartido/seguridad/limites';
 import { RepositorioServicios } from './compartido/servicios/repositorioServicios';
@@ -36,6 +38,7 @@ export function crearDependencias(baseDeDatos: BaseDeDatos, configuracion: Confi
   const servicios = new RepositorioServicios(baseDeDatos);
   const citas = new RepositorioCitas(baseDeDatos);
   const clientes = new RepositorioClientes(baseDeDatos);
+  const salon = new RepositorioSalon(baseDeDatos);
   const usuarias = new RepositorioUsuarias(baseDeDatos);
   const tokens = new EmisorDeTokens(configuracion.secretoDeTokens, configuracion.duracionDeSesionMs);
 
@@ -59,6 +62,8 @@ export function crearDependencias(baseDeDatos: BaseDeDatos, configuracion: Confi
   return {
     clienta: {
       consultarAgenda: new ConsultarAgendaDelDia({ horario, bloqueos, citas }),
+      consultarSalon: new ConsultarSalon({ salon, horario }),
+      horario,
       servicios,
       citas,
       agendarCita,
@@ -82,7 +87,7 @@ export function crearDependencias(baseDeDatos: BaseDeDatos, configuracion: Confi
       cambiarEstadoDeCita: new CambiarEstadoDeCita(citas),
       citas,
       clientes,
-      configuracion: { servicios, horario, guardarHorario },
+      configuracion: { servicios, horario, salon, guardarHorario },
       bloqueos: { bloqueos, crearBloqueo: new CrearBloqueo({ bloqueos, citas }) },
     },
   };

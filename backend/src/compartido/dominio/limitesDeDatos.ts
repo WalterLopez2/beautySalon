@@ -11,6 +11,10 @@ export const LARGO_MAXIMO = {
   zonaHoraria: 64,
   motivo: 200,
   descripcion: 2000,
+  nombreDelSalon: 80,
+  marca: 24,
+  eslogan: 120,
+  descripcionDelSalon: 300,
 } as const;
 
 export const ENTERO_MAXIMO = 2_147_483_647; // INTEGER de PostgreSQL

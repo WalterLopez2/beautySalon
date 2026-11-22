@@ -14,7 +14,6 @@ import { franjasSeCruzan, HORA_NO_DISPONIBLE, horaAMinutos } from '../compartido
 import {
   cabeEnElHorario,
   diaDeLaSemana,
-  DIAS_MAXIMOS_DE_ANTICIPACION,
   esDemasiadoLejos,
   momentoEn,
   respetaElIntervalo,
@@ -104,8 +103,9 @@ export class AgendarCita {
       if (yaPaso(solicitud.fecha, inicioMin, ahora)) {
         throw new DatosInvalidos(['La fecha y hora de la cita ya pasaron.']);
       }
-      if (esDemasiadoLejos(solicitud.fecha, ahora)) {
-        throw new DatosInvalidos([`Solo se puede agendar hasta con ${DIAS_MAXIMOS_DE_ANTICIPACION} dias de anticipacion.`]);
+      const { diasDeAnticipacion } = configuracion;
+      if (esDemasiadoLejos(solicitud.fecha, ahora, diasDeAnticipacion)) {
+        throw new DatosInvalidos([`Solo se puede agendar hasta con ${diasDeAnticipacion} dias de anticipacion.`]);
       }
 
       const horarioDelDia = await horario.horarioDelDia(diaDeLaSemana(solicitud.fecha));

@@ -4,9 +4,6 @@ import type { CitaDTO, EstadoCita } from '../tipos/api.ts'
 import { formatearFecha, formatearLempiras } from '../utils/formato.ts'
 import { Franja } from './Franja.ts'
 
-// Igual que en el backend, que es quien las vence.
-export const HORAS_PARA_CONFIRMAR = 24
-
 const ETIQUETAS_DE_ESTADO: Record<EstadoCita, string> = {
   pendiente: 'Pendiente de confirmacion',
   confirmada: 'Confirmada',

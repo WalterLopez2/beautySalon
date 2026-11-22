@@ -10,7 +10,7 @@ import type { Bloqueo } from '../features/bloqueos/Bloqueo.ts'
 import type { BorradorDeBloqueo } from '../features/bloqueos/BorradorDeBloqueo.ts'
 import type { CrearBloqueo } from '../features/bloqueos/CrearBloqueo.ts'
 import type { RepositorioBloqueos } from '../features/bloqueos/repositorioBloqueos.ts'
-import { useConsulta } from './useConsulta.ts'
+import { useConsulta } from '../../compartido/hooks/useConsulta.ts'
 
 interface BloqueosEnPantalla {
   bloqueos: readonly Bloqueo[]

@@ -2,6 +2,7 @@
 // lugar. Son proteccion tecnica contra abuso (bots, fuerza bruta), no reglas
 // del negocio: las reglas del salon las configura la duena en el panel.
 
+import { CITAS_POR_CONEXION_TOPE } from '../dominio/horario';
 import type { ReglaDeLimite } from './LimitadorDeIntentos';
 
 const MINUTO = 60 * 1000;
@@ -16,7 +17,8 @@ export const LIMITES = {
   // Citas que se pueden pedir desde una misma IP.
   agendarPorIp: { intentos: 10, ventanaMs: HORA },
   // Citas para un mismo dia desde una IP: nadie llena la agenda de un dia solo.
-  agendarPorIpYFecha: { intentos: 5, ventanaMs: 24 * HORA },
+  // El numero real lo pone la duena; este es solo el tope que puede elegir.
+  agendarPorIpYFecha: { intentos: CITAS_POR_CONEXION_TOPE, ventanaMs: 24 * HORA },
   // Consultas de historial con codigo (evita adivinar codigos).
   consultarHistorialPorIp: { intentos: 20, ventanaMs: 15 * MINUTO },
 } satisfies Record<string, ReglaDeLimite>;

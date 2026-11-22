@@ -6,6 +6,7 @@
 
 import { lazy, Suspense } from 'react'
 import './App.css'
+import { LimiteDeError } from './compartido/componentes/LimiteDeError.tsx'
 
 const VistaClienta = lazy(() => import('./clienta/VistaClienta.tsx'))
 const VistaDuena = lazy(() => import('./duena/VistaDuena.tsx'))
@@ -20,9 +21,11 @@ function App() {
   const Vista = esRutaDelPanel(window.location.pathname) ? VistaDuena : VistaClienta
 
   return (
-    <Suspense fallback={<p role="status">Cargando...</p>}>
-      <Vista />
-    </Suspense>
+    <LimiteDeError>
+      <Suspense fallback={<p className="pantalla-de-carga" role="status">Cargando...</p>}>
+        <Vista />
+      </Suspense>
+    </LimiteDeError>
   )
 }
 

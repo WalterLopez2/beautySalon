@@ -1,10 +1,10 @@
 // Horario de atencion y reglas de reserva que configura la duena: que dias
 // abre, de que hora a que hora, cada cuanto ofrece turnos, en que zona horaria
-// esta el salon y cuantas citas por venir puede tener una misma clienta.
+// esta el salon y todas las reglas de reserva.
 // Inmutable: cada cambio devuelve un horario nuevo, listo para el estado de React.
 //
 // Nada viene predefinido. Un salon nuevo empieza sin dias (cerrado), sin
-// intervalo y sin limite; solo la zona horaria se propone desde el navegador.
+// reglas; solo la zona horaria se propone desde el navegador.
 
 import type { DiaDeAtencionDTO, GuardarHorarioDTO, HorarioSemanalDTO } from '../../../compartido/tipos/api.ts'
 import { esHoraValida, horaAMinutos } from '../../../compartido/utils/hora.ts'
@@ -29,39 +29,95 @@ export interface HorasDelDia {
   cierre: string // HH:MM
 }
 
-interface Ajustes {
-  zonaHoraria: string
-  intervaloMin: number | null
-  maxCitasPendientes: number | null
+type CampoDeRegla =
+  | 'intervaloMin'
+  | 'maxCitasPendientes'
+  | 'diasDeAnticipacion'
+  | 'horasParaConfirmar'
+  | 'citasPorConexionAlDia'
+
+export interface ReglaDeReserva {
+  campo: CampoDeRegla
+  etiqueta: string
+  ayuda: string
+  minimo: number
+  maximo: number
 }
 
-// Mismos limites que valida el backend.
-const INTERVALO = { minimo: 5, maximo: 240 }
-const CITAS_PENDIENTES = { minimo: 1, maximo: 50 }
+// El formulario y la validacion salen de esta misma lista. Los rangos son los
+// bordes que acepta el backend, no valores: los valores los pone la duena.
+export const REGLAS_DE_RESERVA: readonly ReglaDeReserva[] = [
+  {
+    campo: 'intervaloMin',
+    etiqueta: 'Turnos cada (minutos)',
+    ayuda: 'Cada cuanto se ofrece una hora para empezar.',
+    minimo: 5,
+    maximo: 240,
+  },
+  {
+    campo: 'maxCitasPendientes',
+    etiqueta: 'Maximo de citas por venir por clienta',
+    ayuda: 'Cuantas citas futuras puede tener un mismo telefono.',
+    minimo: 1,
+    maximo: 50,
+  },
+  {
+    campo: 'diasDeAnticipacion',
+    etiqueta: 'Dias de anticipacion para reservar',
+    ayuda: 'Hasta cuantos dias adelante se puede agendar.',
+    minimo: 1,
+    maximo: 365,
+  },
+  {
+    campo: 'horasParaConfirmar',
+    etiqueta: 'Horas que tienes para confirmar',
+    ayuda: 'Despues de este plazo una solicitud vence y libera su hora. Si lo bajas, las que ya pasaron del plazo vencen enseguida.',
+    minimo: 1,
+    maximo: 720,
+  },
+  {
+    campo: 'citasPorConexionAlDia',
+    etiqueta: 'Citas para un mismo dia desde una conexion',
+    ayuda: 'Evita que una persona llene tu agenda. Quienes usan el mismo Wi-Fi comparten este numero.',
+    minimo: 1,
+    maximo: 50,
+  },
+]
+
+type Reglas = Record<CampoDeRegla, number | null>
+
+interface Ajustes extends Reglas {
+  zonaHoraria: string
+}
 
 export class HorarioSemanal {
   readonly zonaHoraria: string
-  readonly intervaloMin: number | null
-  readonly maxCitasPendientes: number | null
   readonly yaGuardado: boolean
+  private readonly ajustes: Ajustes
   private readonly dias: ReadonlyMap<number, HorasDelDia>
 
   constructor(ajustes: Ajustes, dias: ReadonlyMap<number, HorasDelDia>, yaGuardado: boolean) {
     this.zonaHoraria = ajustes.zonaHoraria
-    this.intervaloMin = ajustes.intervaloMin
-    this.maxCitasPendientes = ajustes.maxCitasPendientes
+    this.ajustes = ajustes
     this.dias = dias
     this.yaGuardado = yaGuardado
   }
 
   static desdeDTO(dto: HorarioSemanalDTO): HorarioSemanal {
     const dias = new Map(dto.dias.map((dia) => [dia.diaSemana, { apertura: dia.apertura, cierre: dia.cierre }]))
-    const ajustes = {
+    const ajustes: Ajustes = {
       zonaHoraria: dto.zonaHoraria ?? zonaDelNavegador(),
       intervaloMin: dto.intervaloMin,
       maxCitasPendientes: dto.maxCitasPendientes,
+      diasDeAnticipacion: dto.diasDeAnticipacion,
+      horasParaConfirmar: dto.horasParaConfirmar,
+      citasPorConexionAlDia: dto.citasPorConexionAlDia,
     }
     return new HorarioSemanal(ajustes, dias, dto.configurado)
+  }
+
+  valorDe(campo: CampoDeRegla): number | null {
+    return this.ajustes[campo]
   }
 
   horasDel(dia: number): HorasDelDia | null {
@@ -90,16 +146,12 @@ export class HorarioSemanal {
     return this.con({}, dias)
   }
 
-  conIntervalo(intervaloMin: number | null): HorarioSemanal {
-    return this.con({ intervaloMin })
+  conRegla(campo: CampoDeRegla, valor: number | null): HorarioSemanal {
+    return this.con({ [campo]: valor })
   }
 
   conZonaHoraria(zonaHoraria: string): HorarioSemanal {
     return this.con({ zonaHoraria })
-  }
-
-  conMaximoDeCitasPendientes(maxCitasPendientes: number | null): HorarioSemanal {
-    return this.con({ maxCitasPendientes })
   }
 
   // ----- Validacion y envio -----
@@ -110,13 +162,10 @@ export class HorarioSemanal {
     if (!this.zonaHoraria.trim()) {
       errores.push('Elegi la zona horaria del salon.')
     }
-    if (!estaEntre(this.intervaloMin, INTERVALO)) {
-      errores.push(`Elegi cada cuantos minutos ofreces turnos (entre ${INTERVALO.minimo} y ${INTERVALO.maximo}).`)
-    }
-    if (!estaEntre(this.maxCitasPendientes, CITAS_PENDIENTES)) {
-      errores.push(
-        `Elegi cuantas citas por venir puede tener una clienta (entre ${CITAS_PENDIENTES.minimo} y ${CITAS_PENDIENTES.maximo}).`,
-      )
+    for (const regla of REGLAS_DE_RESERVA) {
+      if (!estaEntre(this.valorDe(regla.campo), regla)) {
+        errores.push(`${regla.etiqueta}: escribi un numero entre ${regla.minimo} y ${regla.maximo}.`)
+      }
     }
     for (const dia of DIAS_DE_LA_SEMANA) {
       const horas = this.horasDel(dia.numero)
@@ -132,28 +181,28 @@ export class HorarioSemanal {
   }
 
   aDTO(): GuardarHorarioDTO {
-    if (this.intervaloMin === null || this.maxCitasPendientes === null || !this.estaCompleto()) {
+    if (!this.estaCompleto()) {
       throw new Error('El horario todavia tiene datos pendientes.')
     }
+    // `estaCompleto` ya garantizo que ninguna regla esta vacia.
+    const reglas = this.ajustes as Record<CampoDeRegla, number>
     const dias: DiaDeAtencionDTO[] = [...this.dias.entries()]
       .sort(([a], [b]) => a - b)
       .map(([diaSemana, horas]) => ({ diaSemana, ...horas }))
 
     return {
       zonaHoraria: this.zonaHoraria.trim(),
-      intervaloMin: this.intervaloMin,
-      maxCitasPendientes: this.maxCitasPendientes,
+      intervaloMin: reglas.intervaloMin,
+      maxCitasPendientes: reglas.maxCitasPendientes,
+      diasDeAnticipacion: reglas.diasDeAnticipacion,
+      horasParaConfirmar: reglas.horasParaConfirmar,
+      citasPorConexionAlDia: reglas.citasPorConexionAlDia,
       dias,
     }
   }
 
   private con(cambios: Partial<Ajustes>, dias: ReadonlyMap<number, HorasDelDia> = this.dias): HorarioSemanal {
-    const ajustes: Ajustes = {
-      zonaHoraria: this.zonaHoraria,
-      intervaloMin: this.intervaloMin,
-      maxCitasPendientes: this.maxCitasPendientes,
-      ...cambios,
-    }
+    const ajustes: Ajustes = { ...this.ajustes, ...cambios }
     return new HorarioSemanal(ajustes, dias, this.yaGuardado)
   }
 }

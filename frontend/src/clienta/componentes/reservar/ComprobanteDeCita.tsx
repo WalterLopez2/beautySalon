@@ -5,7 +5,6 @@
 // persona podria leerlo.
 
 import { useEffect, useRef } from 'react'
-import { HORAS_PARA_CONFIRMAR } from '../../../compartido/dominio/Cita.ts'
 import type { CitaAgendada } from '../../features/agendamiento/repositorioCitas.ts'
 import { DetalleDeCita } from '../DetalleDeCita.tsx'
 import { SECCIONES } from '../secciones.ts'
@@ -13,10 +12,11 @@ import { BotonDeCopiar } from './BotonDeCopiar.tsx'
 
 interface Props {
   citaAgendada: CitaAgendada
+  horasParaConfirmar: number
   alAgendarOtra: () => void
 }
 
-export function ComprobanteDeCita({ citaAgendada, alAgendarOtra }: Props) {
+export function ComprobanteDeCita({ citaAgendada, horasParaConfirmar, alAgendarOtra }: Props) {
   const { cita, codigoDeConsulta } = citaAgendada
   const titulo = useRef<HTMLHeadingElement>(null)
 
@@ -53,7 +53,7 @@ export function ComprobanteDeCita({ citaAgendada, alAgendarOtra }: Props) {
       </p>
 
       <p className="comprobante__aviso">
-        El salon todavia debe confirmarla. Si no lo hace en {HORAS_PARA_CONFIRMAR} horas, la hora
+        El salon todavia debe confirmarla. Si no lo hace en {horasParaConfirmar} {horasParaConfirmar === 1 ? 'hora' : 'horas'}, tu espacio
         puede liberarse: revisa su estado en Mis citas.
       </p>
 

@@ -1,6 +1,5 @@
 // Lista de lo que falta confirmar en todos los dias, con acceso a su agenda.
 
-import { HORAS_PARA_CONFIRMAR } from '../../../compartido/dominio/Cita.ts'
 import type { CitaDelPanel } from '../../features/agenda/CitaDelPanel.ts'
 import { EstadoDeConsulta } from '../EstadoDeConsulta.tsx'
 
@@ -16,7 +15,7 @@ export function SolicitudesPorConfirmar({ solicitudes, cargando, error, onReinte
   return (
     <section aria-labelledby="titulo-por-confirmar">
       <h3 id="titulo-por-confirmar">Solicitudes por confirmar</h3>
-      <p>Las que no confirmes en {HORAS_PARA_CONFIRMAR} horas liberan su hora.</p>
+      <p>Las que no confirmes dentro del plazo que pusiste en Horario liberan su hora.</p>
 
       <EstadoDeConsulta cargando={cargando} error={error} onReintentar={onReintentar}>
         {solicitudes.length === 0 ? (

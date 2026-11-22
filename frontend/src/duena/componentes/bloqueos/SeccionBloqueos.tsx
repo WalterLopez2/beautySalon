@@ -9,7 +9,7 @@ import { EstadoDeConsulta } from '../EstadoDeConsulta.tsx'
 import { CitasAfectadas } from './CitasAfectadas.tsx'
 import { FormularioDeBloqueo } from './FormularioDeBloqueo.tsx'
 
-const DIAS_A_MOSTRAR = 60
+const DIAS_A_MOSTRAR = 365
 
 interface Props {
   fecha: string

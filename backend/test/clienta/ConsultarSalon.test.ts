@@ -1,0 +1,41 @@
+import { describe, expect, it } from 'vitest';
+import { ConsultarSalon } from '../../src/clienta/ConsultarSalon';
+import type { ConfiguracionDelSalon, HorarioDeUnDia } from '../../src/compartido/dominio/horario';
+
+const configuracion: ConfiguracionDelSalon = {
+  zonaHoraria: 'America/Tegucigalpa',
+  intervaloMin: 30,
+  maxCitasPendientes: 2,
+  diasDeAnticipacion: 10,
+  horasParaConfirmar: 8,
+  citasPorConexionAlDia: 4,
+};
+const lunes: HorarioDeUnDia = { diaSemana: 1, aperturaMin: 540, cierreMin: 1080 };
+// 04:30 UTC del 23 = 22:30 del 22 en Honduras.
+const reloj = () => new Date('2026-11-23T04:30:00Z');
+
+function consultar(semanal: { configuracion: ConfiguracionDelSalon; dias: HorarioDeUnDia[] } | null) {
+  const caso = new ConsultarSalon(
+    { salon: { obtener: async () => null }, horario: { obtenerSemanal: async () => semanal } },
+    reloj,
+  );
+  return caso.ejecutar();
+}
+
+describe('ConsultarSalon', () => {
+  it('"hoy" es el del salon y el plazo es el de la duena', async () => {
+    expect((await consultar({ configuracion, dias: [lunes] })).reservas).toEqual({
+      hoy: '2026-11-22',
+      ultimaFecha: '2026-12-02',
+      horasParaConfirmar: 8,
+    });
+  });
+
+  it('sin configurar no recibe reservas', async () => {
+    expect((await consultar(null)).reservas).toBeNull();
+  });
+
+  it('sin ningun dia abierto no recibe reservas', async () => {
+    expect((await consultar({ configuracion, dias: [] })).reservas).toBeNull();
+  });
+});

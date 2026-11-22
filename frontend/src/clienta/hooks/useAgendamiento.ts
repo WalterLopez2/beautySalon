@@ -2,11 +2,13 @@
 // guarda la SolicitudDeCita y delega las reglas al dominio y al caso de uso.
 
 import { useState } from 'react'
-import type { AgendarCita } from '../features/agendamiento/AgendarCita.ts'
+import { HoraOcupada, type AgendarCita } from '../features/agendamiento/AgendarCita.ts'
+import type { PlazoDeReserva } from '../features/agendamiento/PlazoDeReserva.ts'
 import type { CitaAgendada } from '../features/agendamiento/repositorioCitas.ts'
 import { SolicitudDeCita } from '../features/agendamiento/SolicitudDeCita.ts'
 import type { ContactoDTO } from '../../compartido/tipos/api.ts'
 import type { Servicio } from '../../compartido/dominio/Servicio.ts'
+import { ErrorDeApi } from '../../compartido/http/clienteHttp.ts'
 import { contenedor } from '../contenedor.ts'
 import { erroresDeError } from '../../compartido/utils/errores.ts'
 
@@ -20,11 +22,15 @@ interface Agendamiento {
   elegirFecha: (fecha: string) => void
   elegirHora: (hora: string) => void
   cambiarContacto: (cambios: Partial<ContactoDTO>) => void
-  enviar: () => Promise<void>
+  // true = fallo y las horas en pantalla pueden estar viejas: hay que pedirlas de nuevo.
+  enviar: () => Promise<boolean>
   reiniciar: () => void
 }
 
+const CONFLICTO = 409
+
 export function useAgendamiento(
+  plazo: PlazoDeReserva,
   caso: AgendarCita = contenedor.agendarCita,
 ): Agendamiento {
   const [solicitud, setSolicitud] = useState(SolicitudDeCita.vacia())
@@ -39,13 +45,17 @@ export function useAgendamiento(
     setErrores([])
   }
 
-  async function enviar(): Promise<void> {
+  async function enviar(): Promise<boolean> {
     setEnviando(true)
     setErrores([])
     try {
-      setCitaConfirmada(await caso.ejecutar(solicitud))
+      setCitaConfirmada(await caso.ejecutar(solicitud, plazo))
+      return false
     } catch (causa) {
       setErrores(erroresDeError(causa))
+      const perdioLaHora = causa instanceof HoraOcupada || (causa instanceof ErrorDeApi && causa.estado === CONFLICTO)
+      if (perdioLaHora) setSolicitud(solicitud.conHora(''))
+      return perdioLaHora || causa instanceof ErrorDeApi
     } finally {
       setEnviando(false)
     }

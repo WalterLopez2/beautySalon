@@ -1,16 +1,12 @@
 // Editor del horario de atencion y las reglas de reserva. Los cambios se
 // guardan todos juntos con "Guardar horario".
 
-import { DIAS_DE_LA_SEMANA } from '../../features/horario/HorarioSemanal.ts'
+import { DIAS_DE_LA_SEMANA, REGLAS_DE_RESERVA } from '../../features/horario/HorarioSemanal.ts'
 import { useHorarioDelSalon } from '../../hooks/useHorarioDelSalon.ts'
 import { EstadoDeConsulta } from '../EstadoDeConsulta.tsx'
 import { ListaDeErrores } from '../../../compartido/componentes/ListaDeErrores.tsx'
+import { CampoDeReglaDeReserva } from './CampoDeReglaDeReserva.tsx'
 import { FilaDeDia } from './FilaDeDia.tsx'
-
-// Un input numerico vacio significa "sin valor todavia".
-function aNumeroONull(texto: string): number | null {
-  return texto.trim() === '' ? null : Number(texto)
-}
 
 export function SeccionHorario() {
   const h = useHorarioDelSalon()
@@ -40,21 +36,14 @@ export function SeccionHorario() {
             <fieldset>
               <legend>Reglas de reserva</legend>
 
-              <label htmlFor="horario-intervalo">Turnos cada (minutos)</label>
-              <input
-                id="horario-intervalo"
-                type="number"
-                value={h.horario.intervaloMin ?? ''}
-                onChange={(e) => h.cambiarIntervalo(aNumeroONull(e.target.value))}
-              />
-
-              <label htmlFor="horario-maximo">Maximo de citas por venir por clienta</label>
-              <input
-                id="horario-maximo"
-                type="number"
-                value={h.horario.maxCitasPendientes ?? ''}
-                onChange={(e) => h.cambiarMaximoDeCitasPendientes(aNumeroONull(e.target.value))}
-              />
+              {REGLAS_DE_RESERVA.map((regla) => (
+                <CampoDeReglaDeReserva
+                  key={regla.campo}
+                  regla={regla}
+                  valor={h.horario!.valorDe(regla.campo)}
+                  onCambiar={(valor) => h.cambiarRegla(regla.campo, valor)}
+                />
+              ))}
 
               <label htmlFor="horario-zona">Zona horaria</label>
               <input

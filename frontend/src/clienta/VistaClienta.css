@@ -8,11 +8,12 @@
   background: var(--color-background);
   color: var(--color-ink);
   font: 300 17px/1.7 var(--fuente-texto);
+  /* Lo que escribe la duena puede traer una palabra o un enlace larguisimo. */
+  overflow-wrap: anywhere;
 }
 
-.vista-clienta h1,
-.vista-clienta h2,
-.vista-clienta h3 {
+/* :where no suma especificidad: asi cada clase puede cambiar margen o fuente. */
+.vista-clienta :where(h1, h2, h3) {
   font-family: var(--fuente-titulos);
   font-weight: 500;
   line-height: 1.15;
@@ -70,6 +71,10 @@
 }
 
 .boton--chico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px; /* lo minimo para tocar con el dedo */
   padding: 9px 18px;
   font-size: 14px;
 }
@@ -93,7 +98,21 @@
   height: 64px;
 }
 
+/* Solo la marca se encoge: un nombre largo no parte el boton ni el menu. */
+.encabezado__contenido .boton,
+.encabezado__enlaces {
+  flex-shrink: 0;
+}
+
+.encabezado__contenido .boton {
+  white-space: nowrap;
+}
+
 .encabezado__marca {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font: 500 22px var(--fuente-titulos);
   letter-spacing: 0.22em;
   color: var(--color-gold);
@@ -109,6 +128,10 @@
 }
 
 .encabezado__enlaces a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  white-space: nowrap;
   color: var(--color-muted);
   text-decoration: none;
 }
@@ -190,7 +213,7 @@
 
 .cuadricula-servicios {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
   gap: 16px;
 }
 
@@ -251,11 +274,13 @@
 
 .formulario-cita {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   max-width: 760px;
 }
 
 .paso {
+  min-width: 0; /* un fieldset no se encoge sin esto */
   margin: 0;
   border: 1px solid var(--color-line);
   border-radius: 18px;
@@ -284,7 +309,7 @@
 
 .opciones-servicio {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 10px;
   margin-top: 12px;
 }
@@ -336,6 +361,9 @@
 }
 
 .campo__control {
+  min-width: 0;
+  width: 100%;
+  min-height: 48px;
   border: 1px solid var(--color-line);
   border-radius: 12px;
   padding: 10px 14px;
@@ -407,7 +435,7 @@
 
 .campos-contacto {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 0 16px;
 }
 
@@ -561,6 +589,43 @@
   color: var(--color-muted);
 }
 
+/* ----- Avisos y contacto ----- */
+
+.aviso {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin-top: 12px;
+  color: var(--color-muted);
+}
+
+.aviso p {
+  margin: 0;
+}
+
+.contacto {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-gold);
+  font-weight: 400;
+}
+
+.portada__cerrado {
+  display: grid;
+  justify-items: center;
+  max-width: 520px;
+  margin: 0 auto 24px;
+  border: 1px solid var(--color-gold);
+  border-radius: 14px;
+  padding: 12px 18px;
+  background: var(--color-surface);
+}
+
+.portada__cerrado strong {
+  font-weight: 400;
+}
+
 /* ----- Pie de pagina ----- */
 
 .pie {
@@ -569,6 +634,10 @@
   color: var(--color-muted);
   font-size: 14px;
   text-align: center;
+}
+
+.pie p {
+  margin: 0;
 }
 
 .pie__marca {
@@ -580,8 +649,62 @@
 /* ----- Pantallas chicas ----- */
 
 @media (max-width: 820px) {
+  /* El encabezado tiene dos filas: los enlaces del menu no se ocultan. */
+  html {
+    scroll-padding-top: 108px;
+  }
+
+  .encabezado {
+    padding-top: 8px;
+  }
+
+  .encabezado__contenido {
+    flex-wrap: wrap;
+    row-gap: 0;
+    height: auto;
+  }
+
+  .encabezado__marca {
+    flex: 1;
+    letter-spacing: 0.14em;
+  }
+
   .encabezado__enlaces {
-    display: none;
+    order: 1;
+    justify-content: space-around;
+    gap: 8px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .contenedor {
+    padding: 0 16px;
+  }
+
+  .portada {
+    padding: 36px 0 40px;
+  }
+
+  .seccion {
+    padding: 44px 0;
+  }
+
+  .seccion__introduccion {
+    margin-bottom: 22px;
+  }
+
+  .paso {
+    padding: 16px 14px;
+  }
+
+  .campo,
+  .formulario-consulta {
+    max-width: none;
+  }
+
+  .pie {
+    padding: 32px 16px;
   }
 }
 

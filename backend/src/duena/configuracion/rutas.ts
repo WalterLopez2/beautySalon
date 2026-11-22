@@ -1,9 +1,10 @@
-// Rutas con las que la duena administra su salon: catalogo de servicios y
-// horario de atencion. Se montan bajo /panel, ya protegidas por la sesion.
+// Rutas con las que la duena administra su salon: informacion publica,
+// catalogo de servicios y horario con sus reglas. Se montan bajo /panel, ya protegidas por la sesion.
 
 import { Router } from 'express';
 import type { HorarioSemanal } from '../../compartido/dominio/horario';
 import { aHorarioDeUnDia } from '../../compartido/dominio/horario';
+import { prepararInformacion, type InformacionDelSalon } from '../../compartido/dominio/informacionDelSalon';
 import { DURACION_MAXIMA, LARGO_MAXIMO } from '../../compartido/dominio/limitesDeDatos';
 import { NoEncontrado } from '../../compartido/errores';
 import {
@@ -29,6 +30,10 @@ export interface DependenciasDeConfiguracion {
     cambiarActivo(id: number, activo: boolean): Promise<ServicioDelPanel | null>;
   };
   horario: { obtenerSemanal(): Promise<HorarioSemanal | null> };
+  salon: {
+    obtener(): Promise<InformacionDelSalon | null>;
+    guardar(informacion: InformacionDelSalon): Promise<InformacionDelSalon>;
+  };
   guardarHorario: { ejecutar(horario: HorarioSemanal): Promise<HorarioSemanal> };
 }
 
@@ -37,9 +42,20 @@ const SERVICIO_INEXISTENTE = 'El servicio no existe.';
 export function crearRutasDeConfiguracion({
   servicios,
   horario,
+  salon,
   guardarHorario,
 }: DependenciasDeConfiguracion): Router {
   const rutas = Router();
+
+  // ----- Informacion publica del salon -----
+
+  rutas.get('/salon', async (_peticion, respuesta) => {
+    respuesta.json(await salon.obtener());
+  });
+
+  rutas.put('/salon', async (peticion, respuesta) => {
+    respuesta.json(await salon.guardar(prepararInformacion(leerInformacion(peticion.body))));
+  });
 
   // ----- Catalogo de servicios -----
 
@@ -84,6 +100,17 @@ function existente(servicio: ServicioDelPanel | null): ServicioDelPanel {
   return servicio;
 }
 
+function leerInformacion(cuerpo: unknown): InformacionDelSalon {
+  const datos = leerObjeto(cuerpo, 'el salon');
+  return leerCampos<InformacionDelSalon>({
+    nombre: () => leerTexto(datos.nombre, 'nombre', LARGO_MAXIMO.nombreDelSalon),
+    marca: () => leerTextoOpcional(datos.marca, 'marca', LARGO_MAXIMO.marca),
+    eslogan: () => leerTextoOpcional(datos.eslogan, 'eslogan', LARGO_MAXIMO.eslogan),
+    descripcion: () => leerTextoOpcional(datos.descripcion, 'descripcion', LARGO_MAXIMO.descripcionDelSalon),
+    telefono: () => leerTextoOpcional(datos.telefono, 'telefono', LARGO_MAXIMO.telefono),
+  });
+}
+
 function leerDatosServicio(cuerpo: unknown): DatosServicio {
   const datos = leerObjeto(cuerpo, 'el servicio');
   return leerCampos<DatosServicio>({
@@ -105,6 +132,9 @@ function leerHorarioSemanal(cuerpo: unknown): HorarioSemanal {
         zonaHoraria: () => leerTexto(datos.zonaHoraria, 'zonaHoraria', LARGO_MAXIMO.zonaHoraria),
         intervaloMin: () => leerEnteroPositivo(datos.intervaloMin, 'intervaloMin'),
         maxCitasPendientes: () => leerEnteroPositivo(datos.maxCitasPendientes, 'maxCitasPendientes'),
+        diasDeAnticipacion: () => leerEnteroPositivo(datos.diasDeAnticipacion, 'diasDeAnticipacion'),
+        horasParaConfirmar: () => leerEnteroPositivo(datos.horasParaConfirmar, 'horasParaConfirmar'),
+        citasPorConexionAlDia: () => leerEnteroPositivo(datos.citasPorConexionAlDia, 'citasPorConexionAlDia'),
       }),
     dias: () =>
       leerLista(datos.dias, 'dias').map((crudo) => {

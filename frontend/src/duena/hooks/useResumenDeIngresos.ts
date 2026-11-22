@@ -5,7 +5,7 @@ import { finDeSemana, inicioDeSemana } from '../../compartido/utils/fecha.ts'
 import { contenedorDuena } from '../contenedor.ts'
 import type { RepositorioAgenda } from '../features/agenda/repositorioAgenda.ts'
 import { ResumenDeIngresos } from '../features/ingresos/ResumenDeIngresos.ts'
-import { useConsulta } from './useConsulta.ts'
+import { useConsulta } from '../../compartido/hooks/useConsulta.ts'
 
 interface ResumenEnPantalla {
   resumen: ResumenDeIngresos

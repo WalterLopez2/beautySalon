@@ -3,12 +3,20 @@
 
 import { ErrorDeValidacion } from '../../../compartido/dominio/ErrorDeValidacion.ts'
 import type { CitaAgendada, RepositorioCitas } from './repositorioCitas.ts'
+import type { PlazoDeReserva } from './PlazoDeReserva.ts'
 import type { SolicitudDeCita } from './SolicitudDeCita.ts'
 
 export class SolicitudInvalida extends ErrorDeValidacion {
   constructor(errores: string[]) {
     super(errores)
     this.name = 'SolicitudInvalida'
+  }
+}
+
+export class HoraOcupada extends SolicitudInvalida {
+  constructor() {
+    super(['Esa hora ya fue ocupada. Elegi otra, por favor.'])
+    this.name = 'HoraOcupada'
   }
 }
 
@@ -19,8 +27,10 @@ export class AgendarCita {
     this.repositorio = repositorio
   }
 
-  async ejecutar(solicitud: SolicitudDeCita): Promise<CitaAgendada> {
+  async ejecutar(solicitud: SolicitudDeCita, plazo: PlazoDeReserva): Promise<CitaAgendada> {
     const errores = solicitud.errores()
+    const errorDePlazo = plazo.errorDe(solicitud.fecha)
+    if (errorDePlazo) errores.unshift(errorDePlazo)
     if (errores.length > 0) {
       throw new SolicitudInvalida(errores)
     }
@@ -39,7 +49,7 @@ export class AgendarCita {
 
     const agenda = await this.repositorio.agendaDe(solicitud.fecha)
     if (!agenda.estaDisponible(franja)) {
-      throw new SolicitudInvalida(['Esa hora ya fue ocupada. Elegi otra, por favor.'])
+      throw new HoraOcupada()
     }
   }
 }

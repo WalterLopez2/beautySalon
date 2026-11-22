@@ -19,8 +19,10 @@ export class AgendaDelDia {
   private readonly ocupadas: readonly Franja[]
   // null = ese dia el salon no atiende (o aun no configuro su horario).
   private readonly horario: HorarioDeAtencion | null
+  // Solo hoy: antes de esta hora ya paso, segun el reloj del salon.
+  private readonly noAntesDe: string | null
 
-  constructor(fecha: string, ocupadas: readonly Franja[], horario: HorarioDeAtencion | null) {
+  constructor(fecha: string, ocupadas: readonly Franja[], horario: HorarioDeAtencion | null, noAntesDe: string | null) {
     if (!esFechaValida(fecha)) {
       throw new Error(`La fecha "${fecha}" debe tener el formato YYYY-MM-DD.`)
     }
@@ -31,11 +33,12 @@ export class AgendaDelDia {
     this.fecha = fecha
     this.ocupadas = ocupadas
     this.horario = horario
+    this.noAntesDe = noAntesDe
   }
 
   static desdeDTO(dto: AgendaDelDiaDTO): AgendaDelDia {
     const ocupadas = dto.ocupadas.map((franja) => new Franja(franja.inicio, franja.duracionMin))
-    return new AgendaDelDia(dto.fecha, ocupadas, horarioDelDTO(dto))
+    return new AgendaDelDia(dto.fecha, ocupadas, horarioDelDTO(dto), dto.noAntesDe)
   }
 
   estaAbierto(): boolean {
@@ -52,8 +55,8 @@ export class AgendaDelDia {
   }
 
   // Todas las franjas donde cabe un servicio de esa duracion.
-  // `apartirDe` sirve para no ofrecer horas ya pasadas cuando la fecha es hoy.
-  franjasDisponiblesPara(duracionMin: number, apartirDe?: string): Franja[] {
+  // Si la fecha es hoy, no ofrece horas que ya pasaron.
+  franjasDisponiblesPara(duracionMin: number): Franja[] {
     if (!this.horario) return []
 
     const disponibles: Franja[] = []
@@ -65,7 +68,7 @@ export class AgendaDelDia {
       minuto += this.horario.intervaloMin
     ) {
       const franja = new Franja(minutosAHora(minuto), duracionMin)
-      const yaPaso = apartirDe !== undefined && franja.empiezaAntesDe(apartirDe)
+      const yaPaso = this.noAntesDe !== null && franja.empiezaAntesDe(this.noAntesDe)
       if (!yaPaso && this.estaDisponible(franja)) {
         disponibles.push(franja)
       }
@@ -73,12 +76,12 @@ export class AgendaDelDia {
     return disponibles
   }
 
-  horasDisponiblesPara(duracionMin: number, apartirDe?: string): string[] {
-    return this.franjasDisponiblesPara(duracionMin, apartirDe).map((franja) => franja.inicio)
+  horasDisponiblesPara(duracionMin: number): string[] {
+    return this.franjasDisponiblesPara(duracionMin).map((franja) => franja.inicio)
   }
 
-  sinEspacioPara(duracionMin: number, apartirDe?: string): boolean {
-    return this.franjasDisponiblesPara(duracionMin, apartirDe).length === 0
+  sinEspacioPara(duracionMin: number): boolean {
+    return this.franjasDisponiblesPara(duracionMin).length === 0
   }
 
   private cabeEnElHorario(franja: Franja, horario: HorarioDeAtencion): boolean {

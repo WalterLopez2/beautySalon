@@ -48,7 +48,7 @@ const cita: CitaRegistrada = {
   clienta: { id: 7, nombre: 'Ana', telefono: TELEFONO_DE_ANA, correo: null },
 };
 
-const configuracionDelSalon = { zonaHoraria: 'America/Tegucigalpa', intervaloMin: 30, maxCitasPendientes: 2 };
+const configuracionDelSalon = { zonaHoraria: 'America/Tegucigalpa', intervaloMin: 30, maxCitasPendientes: 2, diasDeAnticipacion: 60, horasParaConfirmar: 24, citasPorConexionAlDia: 5 };
 const servicioDelPanel = {
   id: 1,
   nombre: 'Manicura',
@@ -73,7 +73,9 @@ const repositorioDeBloqueos = {
 
 // Limites bajos para poder comprobar el 429 sin cientos de peticiones.
 const limiteDeAgendar = new LimitadorPorIp({ intentos: 60, ventanaMs: UNA_HORA });
-const limiteDeAgendarPorFecha = new LimitadorPorIp({ intentos: 8, ventanaMs: UNA_HORA });
+const limiteDeAgendarPorFecha = new LimitadorPorIp({ intentos: 50, ventanaMs: UNA_HORA });
+const CUPO_POR_CONEXION = 8; // lo que "configuro la duena" en estas pruebas
+const informacionDelSalon = { nombre: 'Salon de prueba', marca: 'PRUEBA', eslogan: null, descripcion: null, telefono: '99991111' };
 
 const app = crearApp({
   clienta: {
@@ -85,7 +87,11 @@ const app = crearApp({
         // Abre de lunes a sabado de 9:00 a 18:00; el domingo esta cerrado.
         horarioDelDia: async (dia) => (dia === DOMINGO ? null : { aperturaMin: 540, cierreMin: 1080 }),
       },
-    }),
+    }, () => new Date('2026-11-09T14:00:00Z')),
+    consultarSalon: { ejecutar: async () => ({ informacion: informacionDelSalon, reservas: null }) },
+    horario: {
+      obtenerConfiguracion: async () => ({ ...configuracionDelSalon, citasPorConexionAlDia: CUPO_POR_CONEXION }),
+    },
     servicios: { listarActivos: async () => [] },
     citas: {
       listarPorTelefonoYCodigo: async (telefono, codigoHash) =>
@@ -113,7 +119,7 @@ const app = crearApp({
     verificarSesion: new VerificarSesion(tokens, versiones),
     cerrarSesion: new CerrarSesion(versiones),
     cambiarEstadoDeCita: { ejecutar: async (_id, estado) => ({ ...cita, estado }) },
-    citas: { listarEntre: async () => [cita], listarPorCliente: async () => [cita] },
+    citas: { listarEntre: async () => [cita], listarPorCliente: async () => [cita], listarPendientes: async () => [cita] },
     clientes: {
       listar: async () => [],
       obtenerPorId: async (id) => (id === 7 ? new Cliente(7, 'Ana', TELEFONO_DE_ANA, null, new Date()) : null),
@@ -126,6 +132,7 @@ const app = crearApp({
         cambiarActivo: async (id, activo) => (id === 1 ? { ...servicioDelPanel, activo } : null),
       },
       horario: { obtenerSemanal: async () => null },
+      salon: { obtener: async () => informacionDelSalon, guardar: async (informacion) => informacion },
       // El caso de uso real, con una transaccion falsa: asi se prueban sus validaciones.
       guardarHorario: new GuardarHorario((trabajo) => trabajo({ guardarSemanal: async () => {} })),
     },
@@ -188,6 +195,7 @@ describe('API publica (clienta)', () => {
       apertura: '09:00',
       cierre: '18:00',
       intervaloMin: 30,
+      noAntesDe: null,
       ocupadas: [
         { inicio: '10:00', duracionMin: 60 },
         { inicio: '12:00', duracionMin: 60 }, // bloqueo, sin decir el motivo
@@ -316,6 +324,9 @@ const RUTAS_DEL_PANEL: ReadonlyArray<readonly [metodo: string, ruta: string]> = 
   ['POST', '/servicios'],
   ['PUT', '/servicios/1'],
   ['PATCH', '/servicios/1/activo'],
+  ['GET', '/citas/pendientes'],
+  ['GET', '/salon'],
+  ['PUT', '/salon'],
   ['GET', '/horario'],
   ['PUT', '/horario'],
   ['GET', '/bloqueos?desde=2026-11-01&hasta=2026-11-30'],
@@ -369,7 +380,8 @@ describe('Frontera: el panel exige sesion en todas sus rutas', () => {
 describe('Frontera: las rutas del panel no existen fuera de /panel', () => {
   // Ni siquiera con una sesion valida: el error que se busca evitar es montar
   // un router del panel en el lugar equivocado y dejarlo publico.
-  const fueraDelPanel = RUTAS_DEL_PANEL.filter(([metodo, ruta]) => !(metodo === 'GET' && ruta === '/servicios'));
+  const tambienPublicas = ['/servicios', '/salon'];
+  const fueraDelPanel = RUTAS_DEL_PANEL.filter(([metodo, ruta]) => !(metodo === 'GET' && tambienPublicas.includes(ruta)));
 
   it.each(fueraDelPanel)('%s %s responde 404', async (metodo, ruta) => {
     expect((await pedir(ruta, peticionA(metodo, tokenNuevo()))).status).toBe(404);
@@ -559,6 +571,9 @@ describe('API del panel: configuracion del salon', () => {
       zonaHoraria: null,
       intervaloMin: null,
       maxCitasPendientes: null,
+      diasDeAnticipacion: null,
+      horasParaConfirmar: null,
+      citasPorConexionAlDia: null,
       dias: [],
     });
   });
@@ -568,6 +583,9 @@ describe('API del panel: configuracion del salon', () => {
       zonaHoraria: 'America/Tegucigalpa',
       intervaloMin: 45,
       maxCitasPendientes: 3,
+      diasDeAnticipacion: 90,
+      horasParaConfirmar: 12,
+      citasPorConexionAlDia: 7,
       dias: [
         { diaSemana: 6, apertura: '08:00', cierre: '13:00' },
         { diaSemana: 1, apertura: '10:00', cierre: '19:30' },
@@ -582,6 +600,9 @@ describe('API del panel: configuracion del salon', () => {
       zonaHoraria: 'America/Tegucigalpa',
       intervaloMin: 45,
       maxCitasPendientes: 3,
+      diasDeAnticipacion: 90,
+      horasParaConfirmar: 12,
+      citasPorConexionAlDia: 7,
       dias: [
         { diaSemana: 1, apertura: '10:00', cierre: '19:30' },
         { diaSemana: 6, apertura: '08:00', cierre: '13:00' },
@@ -594,10 +615,47 @@ describe('API del panel: configuracion del salon', () => {
       zonaHoraria: 'America/Tegucigalpa',
       intervaloMin: 30,
       maxCitasPendientes: 2,
+      diasDeAnticipacion: 60, horasParaConfirmar: 24, citasPorConexionAlDia: 5,
       dias: [{ diaSemana: 1, apertura: '18:00', cierre: '09:00' }],
     };
 
     expect((await pedir('/panel/horario', conJson('PUT', horario, tokenNuevo()))).status).toBe(400);
+  });
+});
+
+describe('Informacion del salon', () => {
+  it('la pagina publica la lee sin sesion y sin guardarla en cache', async () => {
+    const respuesta = await pedir('/salon');
+
+    expect(await respuesta.json()).toEqual({ informacion: informacionDelSalon, reservas: null });
+    expect(respuesta.headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('la duena la cambia desde el panel', async () => {
+    const nueva = { nombre: 'Otro nombre', marca: '', eslogan: 'Otro eslogan', descripcion: '', telefono: '+504 8888-0000' };
+
+    const respuesta = await pedir('/panel/salon', conJson('PUT', nueva, tokenNuevo()));
+
+    expect(await respuesta.json()).toEqual({
+      nombre: 'Otro nombre',
+      marca: null,
+      eslogan: 'Otro eslogan',
+      descripcion: null,
+      telefono: '88880000',
+    });
+  });
+
+  it.each([{ nombre: '' }, { nombre: 'a'.repeat(81) }, { nombre: 'Salon', telefono: '123' }])(
+    'rechaza %o',
+    async (datos) => {
+      expect((await pedir('/panel/salon', conJson('PUT', datos, tokenNuevo()))).status).toBe(400);
+    },
+  );
+
+  it('el panel lista lo pendiente sin depender de un rango de fechas', async () => {
+    const respuesta = await pedir('/panel/citas/pendientes', conSesion());
+
+    expect((await respuesta.json())[0].nombreEscrito).toBe('Anita');
   });
 });
 
@@ -648,7 +706,7 @@ describe('Limite de citas por IP para un mismo dia', () => {
       (await pedir('/citas', conJson('POST', { ...solicitudValida, fecha, inicio }))).status;
 
     for (let n = 0; n < 10; n++) expect(await agendar('2026-12-24', '23:00')).toBe(409);
-    for (let n = 0; n < 8; n++) expect(await agendar('2026-12-24')).toBe(201);
+    for (let n = 0; n < CUPO_POR_CONEXION; n++) expect(await agendar('2026-12-24')).toBe(201);
     expect(await agendar('2026-12-24')).toBe(429);
     expect(await agendar('2026-12-26')).toBe(201);
   });

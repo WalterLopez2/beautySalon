@@ -19,6 +19,9 @@ import type { RepositorioClientas } from './features/clientas/repositorioClienta
 import { GuardarHorario } from './features/horario/GuardarHorario.ts'
 import { RepositorioHorarioHttp } from './features/horario/repositorioHorario.ts'
 import type { RepositorioHorario } from './features/horario/repositorioHorario.ts'
+import { GuardarSalon } from './features/salon/GuardarSalon.ts'
+import { RepositorioSalonHttp } from './features/salon/repositorioSalon.ts'
+import type { RepositorioSalon } from './features/salon/repositorioSalon.ts'
 import { AvisosDeSesion } from './features/sesion/avisosDeSesion.ts'
 import { CerrarSesion } from './features/sesion/CerrarSesion.ts'
 import { RecuperarSesion } from './features/sesion/RecuperarSesion.ts'
@@ -35,6 +38,8 @@ export interface ContenedorDuena {
   repositorioClientas: RepositorioClientas
   repositorioCatalogo: RepositorioCatalogo
   guardarServicio: GuardarServicio
+  repositorioSalon: RepositorioSalon
+  guardarSalon: GuardarSalon
   repositorioHorario: RepositorioHorario
   guardarHorario: GuardarHorario
   repositorioBloqueos: RepositorioBloqueos
@@ -49,6 +54,7 @@ function crearContenedor(urlBase: string): ContenedorDuena {
   const http = new ClienteHttp(urlBase, () => avisosDeSesion.avisarQueSePerdio())
   const repositorioAgenda = new RepositorioAgendaHttp(http)
   const repositorioCatalogo = new RepositorioCatalogoHttp(http)
+  const repositorioSalon = new RepositorioSalonHttp(http)
   const repositorioHorario = new RepositorioHorarioHttp(http)
   const repositorioBloqueos = new RepositorioBloqueosHttp(http)
 
@@ -62,6 +68,8 @@ function crearContenedor(urlBase: string): ContenedorDuena {
     repositorioClientas: new RepositorioClientasHttp(http),
     repositorioCatalogo,
     guardarServicio: new GuardarServicio(repositorioCatalogo),
+    repositorioSalon,
+    guardarSalon: new GuardarSalon(repositorioSalon),
     repositorioHorario,
     guardarHorario: new GuardarHorario(repositorioHorario),
     repositorioBloqueos,

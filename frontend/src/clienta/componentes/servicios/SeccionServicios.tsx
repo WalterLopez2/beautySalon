@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import type { CatalogoEnPantalla } from '../../hooks/useCatalogoServicios.ts'
+import { AvisoConReintento } from '../AvisoConReintento.tsx'
 import { SECCIONES } from '../secciones.ts'
 import { FiltroDeCategorias } from './FiltroDeCategorias.tsx'
 import { TarjetaDeServicio } from './TarjetaDeServicio.tsx'
@@ -34,18 +35,11 @@ function ContenidoDelCatalogo({ catalogo, cargando, error, recargar }: CatalogoE
   const [categoria, setCategoria] = useState<string | null>(null)
 
   if (cargando) {
-    return <p role="status">Cargando servicios...</p>
+    return <p className="seccion__aviso" role="status">Cargando servicios...</p>
   }
 
   if (error) {
-    return (
-      <div role="alert" className="seccion__aviso">
-        <p>{error}</p>
-        <button type="button" className="boton boton--chico" onClick={recargar}>
-          Intentar de nuevo
-        </button>
-      </div>
-    )
+    return <AvisoConReintento mensaje={error} alReintentar={recargar} />
   }
 
   if (catalogo.estaVacio()) {

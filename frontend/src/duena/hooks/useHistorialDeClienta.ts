@@ -5,7 +5,7 @@ import { useCallback } from 'react'
 import { contenedorDuena } from '../contenedor.ts'
 import type { HistorialDeClienta } from '../features/clientas/HistorialDeClienta.ts'
 import type { RepositorioClientas } from '../features/clientas/repositorioClientas.ts'
-import { useConsulta } from './useConsulta.ts'
+import { useConsulta } from '../../compartido/hooks/useConsulta.ts'
 
 interface HistorialEnPantalla {
   historial: HistorialDeClienta | null

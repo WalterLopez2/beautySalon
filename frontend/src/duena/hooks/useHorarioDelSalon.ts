@@ -5,9 +5,9 @@ import { useCallback, useState } from 'react'
 import { erroresDeError } from '../../compartido/utils/errores.ts'
 import { contenedorDuena } from '../contenedor.ts'
 import type { GuardarHorario } from '../features/horario/GuardarHorario.ts'
-import type { HorarioSemanal, HorasDelDia } from '../features/horario/HorarioSemanal.ts'
+import type { HorarioSemanal, HorasDelDia, ReglaDeReserva } from '../features/horario/HorarioSemanal.ts'
 import type { RepositorioHorario } from '../features/horario/repositorioHorario.ts'
-import { useConsulta } from './useConsulta.ts'
+import { useConsulta } from '../../compartido/hooks/useConsulta.ts'
 
 interface HorarioEnPantalla {
   // null solo mientras carga por primera vez.
@@ -19,9 +19,8 @@ interface HorarioEnPantalla {
   errores: string[]
   abrirDia: (dia: number, horas: HorasDelDia) => void
   cerrarDia: (dia: number) => void
-  cambiarIntervalo: (minutos: number | null) => void
+  cambiarRegla: (campo: ReglaDeReserva['campo'], valor: number | null) => void
   cambiarZonaHoraria: (zona: string) => void
-  cambiarMaximoDeCitasPendientes: (maximo: number | null) => void
   guardar: () => Promise<void>
   descartarCambios: () => void
 }
@@ -73,9 +72,8 @@ export function useHorarioDelSalon(
     errores,
     abrirDia: (dia, horas) => editar((actual) => actual.conHorasDel(dia, horas)),
     cerrarDia: (dia) => editar((actual) => actual.cerradoEl(dia)),
-    cambiarIntervalo: (minutos) => editar((actual) => actual.conIntervalo(minutos)),
+    cambiarRegla: (campo, valor) => editar((actual) => actual.conRegla(campo, valor)),
     cambiarZonaHoraria: (zona) => editar((actual) => actual.conZonaHoraria(zona)),
-    cambiarMaximoDeCitasPendientes: (maximo) => editar((actual) => actual.conMaximoDeCitasPendientes(maximo)),
     guardar,
     descartarCambios,
   }

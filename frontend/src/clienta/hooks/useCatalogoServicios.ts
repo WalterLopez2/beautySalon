@@ -1,11 +1,11 @@
 // Trae el catalogo de servicios. El hook solo maneja carga y error: el filtrado
 // y la busqueda son metodos de CatalogoServicios.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { CatalogoServicios } from '../../compartido/dominio/CatalogoServicios.ts'
 import type { RepositorioServicios } from '../../compartido/dominio/repositorioServicios.ts'
+import { useConsulta } from '../../compartido/hooks/useConsulta.ts'
 import { contenedor } from '../contenedor.ts'
-import { mensajeDeError } from '../../compartido/utils/errores.ts'
 
 export interface CatalogoEnPantalla {
   catalogo: CatalogoServicios
@@ -14,28 +14,13 @@ export interface CatalogoEnPantalla {
   recargar: () => void
 }
 
+const SIN_SERVICIOS = CatalogoServicios.vacio()
+
 export function useCatalogoServicios(
   repositorio: RepositorioServicios = contenedor.repositorioServicios,
 ): CatalogoEnPantalla {
-  const [catalogo, setCatalogo] = useState(CatalogoServicios.vacio())
-  const [cargando, setCargando] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const consultar = useCallback(() => repositorio.listar(), [repositorio])
+  const { datos, cargando, error, recargar } = useConsulta(consultar, SIN_SERVICIOS)
 
-  const cargar = useCallback(async () => {
-    setCargando(true)
-    setError(null)
-    try {
-      setCatalogo(await repositorio.listar())
-    } catch (causa) {
-      setError(mensajeDeError(causa))
-    } finally {
-      setCargando(false)
-    }
-  }, [repositorio])
-
-  useEffect(() => {
-    void cargar()
-  }, [cargar])
-
-  return { catalogo, cargando, error, recargar: () => void cargar() }
+  return { catalogo: datos, cargando, error, recargar }
 }

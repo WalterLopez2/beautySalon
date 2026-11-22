@@ -6,9 +6,9 @@
 
 import { useEffect, useRef } from 'react'
 import type { CitaAgendada } from '../../features/agendamiento/repositorioCitas.ts'
+import { DetalleDeCita } from '../DetalleDeCita.tsx'
 import { SECCIONES } from '../secciones.ts'
 import { BotonDeCopiar } from './BotonDeCopiar.tsx'
-import { DetalleDeCita } from './DetalleDeCita.tsx'
 
 interface Props {
   citaAgendada: CitaAgendada

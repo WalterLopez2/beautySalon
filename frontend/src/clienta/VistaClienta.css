@@ -505,6 +505,62 @@
   color: var(--color-gold);
 }
 
+/* ----- Mis citas ----- */
+
+.formulario-consulta {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+}
+
+.formulario-consulta .campo {
+  width: 100%;
+  margin-top: 0;
+}
+
+/* Solo visual: el backend ya normaliza mayusculas, espacios y guiones. */
+.campo__control--codigo {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mis-citas {
+  display: grid;
+  gap: 18px;
+  justify-items: start;
+}
+
+.mis-citas__titulo {
+  font-size: 28px;
+}
+
+.mis-citas__titulo:focus,
+.seccion__titulo:focus {
+  outline: none;
+}
+
+.mis-citas__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mis-citas__cita {
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  padding: 20px;
+  background: var(--color-surface);
+}
+
+.mis-citas__sin-resultados {
+  margin: 16px 0 0;
+  color: var(--color-muted);
+}
+
 /* ----- Pie de pagina ----- */
 
 .pie {

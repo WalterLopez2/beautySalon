@@ -3,7 +3,7 @@
 
 import { esFechaValida } from '../../../compartido/utils/fecha.ts'
 import type { SolicitudDeCita } from '../../features/agendamiento/SolicitudDeCita.ts'
-import { DetalleDeCita } from './DetalleDeCita.tsx'
+import { DetalleDeCita } from '../DetalleDeCita.tsx'
 
 interface Props {
   solicitud: SolicitudDeCita

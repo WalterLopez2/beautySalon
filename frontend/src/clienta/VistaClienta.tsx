@@ -6,6 +6,7 @@
 import { Encabezado } from './componentes/Encabezado.tsx'
 import { PieDePagina } from './componentes/PieDePagina.tsx'
 import { Portada } from './componentes/Portada.tsx'
+import { SeccionMisCitas } from './componentes/misCitas/SeccionMisCitas.tsx'
 import { SeccionReservar } from './componentes/reservar/SeccionReservar.tsx'
 import { SeccionServicios } from './componentes/servicios/SeccionServicios.tsx'
 import { useCatalogoServicios } from './hooks/useCatalogoServicios.ts'
@@ -22,6 +23,7 @@ export default function VistaClienta() {
       <main>
         <SeccionServicios catalogoEnPantalla={catalogoEnPantalla} />
         <SeccionReservar catalogoEnPantalla={catalogoEnPantalla} />
+        <SeccionMisCitas />
       </main>
       <PieDePagina />
     </div>

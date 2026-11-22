@@ -2,9 +2,9 @@
 // del `Cliente` del backend: nombre y telefono obligatorios, correo opcional.
 
 import type { ContactoDTO } from '../../../compartido/tipos/api.ts'
+import { TELEFONO_INVALIDO, esTelefonoValido } from '../../../compartido/utils/telefono.ts'
 
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const DIGITOS_DE_TELEFONO = 8 // formato de Honduras
 
 export class DatosDeContacto {
   readonly nombre: string
@@ -37,8 +37,8 @@ export class DatosDeContacto {
     if (!this.nombre.trim()) {
       errores.push('Escribi tu nombre.')
     }
-    if (this.cantidadDeDigitos() < DIGITOS_DE_TELEFONO) {
-      errores.push('El telefono debe tener al menos 8 digitos.')
+    if (!esTelefonoValido(this.telefono)) {
+      errores.push(TELEFONO_INVALIDO)
     }
     if (this.correo.trim() && !CORREO.test(this.correo.trim())) {
       errores.push('El correo electronico no es valido.')
@@ -56,9 +56,5 @@ export class DatosDeContacto {
       telefono: this.telefono.trim(),
       correo: this.correo.trim() || null,
     }
-  }
-
-  private cantidadDeDigitos(): number {
-    return this.telefono.replace(/\D/g, '').length
   }
 }

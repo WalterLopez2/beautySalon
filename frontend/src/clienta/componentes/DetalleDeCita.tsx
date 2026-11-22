@@ -1,7 +1,7 @@
 // Lista de los datos de una cita (servicio, dia, hora, precio y, si ya existe,
-// su estado). La usan el repaso antes de confirmar y el comprobante.
+// su estado). La usan el repaso antes de confirmar, el comprobante y "Mis citas".
 
-import { formatearFecha } from '../../../compartido/utils/formato.ts'
+import { formatearFecha } from '../../compartido/utils/formato.ts'
 
 interface Props {
   servicio: string

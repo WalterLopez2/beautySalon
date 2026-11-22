@@ -2,7 +2,7 @@
 // Son la frontera con el backend: aqui no hay logica, solo la forma del JSON.
 // Las clases del dominio se construyen a partir de estos tipos y nunca al reves.
 
-export type EstadoCita = 'pendiente' | 'confirmada' | 'atendida' | 'cancelada'
+export type EstadoCita = 'pendiente' | 'confirmada' | 'atendida' | 'cancelada' | 'vencida'
 
 export interface ServicioDTO {
   id: number
@@ -64,23 +64,18 @@ export interface SolicitudDeCitaDTO {
   contacto: ContactoDTO
 }
 
-// ----- Panel de la duena (rutas protegidas con token) -----
+// ----- Panel de la duena (rutas protegidas con la cookie de sesion) -----
 
 export interface CredencialesDTO {
   usuario: string
   contrasena: string
 }
 
+// Respuesta del login y de GET /panel/sesion. El token no viene: viaja en una
+// cookie que JavaScript no puede leer.
 export interface SesionDTO {
-  token: string
   nombre: string
   expiraEn: string // fecha y hora ISO 8601
-}
-
-// Respuesta de GET /panel/sesion: el token sigue sirviendo.
-export interface SesionVigenteDTO {
-  nombre: string
-  expiraEn: string
 }
 
 export interface ClientaDTO {
@@ -90,8 +85,14 @@ export interface ClientaDTO {
   correo: string | null
 }
 
+// En el panel cada cita trae el nombre que escribieron al agendarla: el
+// telefono no se verifica, asi que puede no ser el de la ficha.
+export interface CitaDelHistorialDTO extends CitaDTO {
+  nombreEscrito: string
+}
+
 // La duena ve la misma cita que la clienta, mas los datos de quien la pidio.
-export interface CitaDelPanelDTO extends CitaDTO {
+export interface CitaDelPanelDTO extends CitaDelHistorialDTO {
   clienta: ClientaDTO
 }
 
@@ -101,7 +102,7 @@ export interface CambioDeEstadoDTO {
 
 export interface HistorialDeClientaDTO {
   clienta: ClientaDTO
-  citas: CitaDTO[]
+  citas: CitaDelHistorialDTO[]
 }
 
 // Lo que la duena llena en el formulario de un servicio.

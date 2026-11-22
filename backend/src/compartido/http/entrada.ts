@@ -3,7 +3,9 @@
 // mensaje claro. Asi las rutas no repiten validaciones ni usan `any`.
 
 import { esEstadoCita, type EstadoCita } from '../dominio/citas';
+import { esCorreoValido } from '../dominio/correo';
 import { diasEntre, esFechaValida, esHoraValida } from '../dominio/fechas';
+import { ENTERO_MAXIMO, LARGO_MAXIMO, MONTO_MAXIMO } from '../dominio/limitesDeDatos';
 import { DatosInvalidos } from '../errores';
 
 export type Objeto = Record<string, unknown>;
@@ -38,26 +40,45 @@ export function leerObjeto(valor: unknown, campo: string): Objeto {
   return valor as Objeto;
 }
 
-export function leerTexto(valor: unknown, campo: string): string {
+// El largo maximo es obligatorio para que ningun campo nuevo se quede sin el.
+export function leerTexto(valor: unknown, campo: string, maximo: number): string {
   if (typeof valor !== 'string' || !valor.trim()) {
     throw new DatosInvalidos([`El campo "${campo}" es obligatorio.`]);
   }
-  return valor.trim();
+  return exigirTextoGuardable(valor.trim(), campo, maximo);
 }
 
-export function leerTextoOpcional(valor: unknown, campo: string): string | null {
+export function leerTextoOpcional(valor: unknown, campo: string, maximo: number): string | null {
   if (valor === undefined || valor === null || valor === '') return null;
   if (typeof valor !== 'string') {
     throw new DatosInvalidos([`El campo "${campo}" debe ser texto.`]);
   }
-  return valor.trim() || null;
+  return exigirTextoGuardable(valor.trim(), campo, maximo) || null;
+}
+
+export function leerCorreoOpcional(valor: unknown, campo: string): string | null {
+  const correo = leerTextoOpcional(valor, campo, LARGO_MAXIMO.correo);
+  if (correo !== null && !esCorreoValido(correo)) {
+    throw new DatosInvalidos(['El correo electronico no es valido.']);
+  }
+  return correo;
+}
+
+function exigirTextoGuardable(texto: string, campo: string, maximo: number): string {
+  if (texto.length > maximo) {
+    throw new DatosInvalidos([`El campo "${campo}" admite como maximo ${maximo} caracteres.`]);
+  }
+  if (texto.includes('\0')) {
+    throw new DatosInvalidos([`El campo "${campo}" tiene caracteres que no se permiten.`]); // PostgreSQL no los guarda
+  }
+  return texto;
 }
 
 // Acepta numeros o texto numerico, porque los params y la query siempre
 // llegan como texto ("/clientas/7").
 export function leerIdentificador(valor: unknown, campo: string): number {
   const numero = typeof valor === 'string' ? Number(valor) : valor;
-  if (typeof numero !== 'number' || !Number.isInteger(numero) || numero <= 0) {
+  if (typeof numero !== 'number' || !Number.isInteger(numero) || numero <= 0 || numero > ENTERO_MAXIMO) {
     throw new DatosInvalidos([`El campo "${campo}" debe ser un numero entero positivo.`]);
   }
   return numero;
@@ -79,14 +100,17 @@ export function leerHora(valor: unknown, campo: string): string {
 
 export function leerEstadoCita(valor: unknown): EstadoCita {
   if (!esEstadoCita(valor)) {
-    throw new DatosInvalidos(['El estado debe ser pendiente, confirmada, atendida o cancelada.']);
+    throw new DatosInvalidos(['El estado debe ser pendiente, confirmada, atendida, cancelada o vencida.']);
   }
   return valor;
 }
 
-export function leerEnteroPositivo(valor: unknown, campo: string): number {
+export function leerEnteroPositivo(valor: unknown, campo: string, maximo: number = ENTERO_MAXIMO): number {
   if (typeof valor !== 'number' || !Number.isInteger(valor) || valor <= 0) {
     throw new DatosInvalidos([`El campo "${campo}" debe ser un numero entero mayor a cero.`]);
+  }
+  if (valor > maximo) {
+    throw new DatosInvalidos([`El campo "${campo}" admite como maximo ${maximo}.`]);
   }
   return valor;
 }
@@ -94,6 +118,9 @@ export function leerEnteroPositivo(valor: unknown, campo: string): number {
 export function leerMonto(valor: unknown, campo: string): number {
   if (typeof valor !== 'number' || !Number.isFinite(valor) || valor < 0) {
     throw new DatosInvalidos([`El campo "${campo}" debe ser un monto igual o mayor a cero.`]);
+  }
+  if (valor > MONTO_MAXIMO) {
+    throw new DatosInvalidos([`El campo "${campo}" admite como maximo ${MONTO_MAXIMO}.`]);
   }
   return Math.round(valor * 100) / 100; // centavos, como guarda NUMERIC(10, 2)
 }

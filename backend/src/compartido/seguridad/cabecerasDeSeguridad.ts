@@ -20,8 +20,8 @@ export function cabecerasDeSeguridad({ soloHttps }: { soloHttps: boolean }): Req
   };
 }
 
-// Los datos del panel (clientas, telefonos, ingresos) no deben quedar
-// guardados en la cache del navegador ni de proxies intermedios.
+// Los datos privados (panel, codigos, citas) no deben quedar guardados en la
+// cache del navegador ni de proxies intermedios.
 export const sinCache: RequestHandler = (_peticion, respuesta, siguiente) => {
   respuesta.set('Cache-Control', 'no-store');
   siguiente();

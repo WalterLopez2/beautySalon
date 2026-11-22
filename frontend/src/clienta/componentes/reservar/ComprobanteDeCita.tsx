@@ -5,6 +5,7 @@
 // persona podria leerlo.
 
 import { useEffect, useRef } from 'react'
+import { HORAS_PARA_CONFIRMAR } from '../../../compartido/dominio/Cita.ts'
 import type { CitaAgendada } from '../../features/agendamiento/repositorioCitas.ts'
 import { DetalleDeCita } from '../DetalleDeCita.tsx'
 import { SECCIONES } from '../secciones.ts'
@@ -49,6 +50,11 @@ export function ComprobanteDeCita({ citaAgendada, alAgendarOtra }: Props) {
         Guardalo bien: con tu telefono y este codigo puedes ver esta cita en{' '}
         <a href={`#${SECCIONES.misCitas}`}>Mis citas</a>. Cada cita tiene su propio codigo. No lo
         volveremos a mostrar y no debes compartirlo con nadie.
+      </p>
+
+      <p className="comprobante__aviso">
+        El salon todavia debe confirmarla. Si no lo hace en {HORAS_PARA_CONFIRMAR} horas, la hora
+        puede liberarse: revisa su estado en Mis citas.
       </p>
 
       <button type="button" className="boton boton--secundario" onClick={alAgendarOtra}>

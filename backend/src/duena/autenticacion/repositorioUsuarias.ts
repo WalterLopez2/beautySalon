@@ -27,19 +27,6 @@ export class RepositorioUsuarias {
     this.baseDeDatos = baseDeDatos;
   }
 
-  async crearTabla(): Promise<void> {
-    await this.baseDeDatos.query(`
-      CREATE TABLE IF NOT EXISTS usuarias (
-        id SERIAL PRIMARY KEY,
-        usuario VARCHAR(60) NOT NULL UNIQUE,
-        nombre VARCHAR(120) NOT NULL,
-        hash_contrasena TEXT NOT NULL,
-        version_sesion INTEGER NOT NULL DEFAULT 0,
-        creada_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-  }
-
   // El usuario no distingue mayusculas: "Delmy" y "delmy" son la misma cuenta.
   async buscarPorUsuario(usuario: string): Promise<Usuaria | null> {
     const resultado = await this.baseDeDatos.query<FilaUsuaria>(

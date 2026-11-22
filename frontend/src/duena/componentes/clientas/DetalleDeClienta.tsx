@@ -44,7 +44,10 @@ export function DetalleDeClienta({ clientaId, onCerrar }: Props) {
             <h4>Citas</h4>
             <ul>
               {historial.citasRecientes().map((cita) => (
-                <li key={cita.id}>{cita.resumen()}</li>
+                <li key={cita.id}>
+                  {cita.resumen()}
+                  {historial.otroNombreEn(cita) && ` (a nombre de ${historial.otroNombreEn(cita)})`}
+                </li>
               ))}
             </ul>
           </>

@@ -5,6 +5,10 @@
 import type { SolicitudDeCitaDTO } from '../../../compartido/tipos/api.ts'
 import type { Servicio } from '../../../compartido/dominio/Servicio.ts'
 import { esAnteriorAHoy, esFechaValida } from '../../../compartido/utils/fecha.ts'
+import {
+  DIAS_MAXIMOS_DE_ANTICIPACION,
+  ultimaFechaParaAgendar,
+} from '../../../compartido/dominio/plazoDeReserva.ts'
 import { esHoraValida } from '../../../compartido/utils/hora.ts'
 import { DatosDeContacto } from './DatosDeContacto.ts'
 import { Franja } from '../../../compartido/dominio/Franja.ts'
@@ -64,6 +68,8 @@ export class SolicitudDeCita {
       errores.push('Elegi la fecha de tu cita.')
     } else if (esAnteriorAHoy(this.fecha)) {
       errores.push('La fecha de la cita no puede ser anterior a hoy.')
+    } else if (this.fecha > ultimaFechaParaAgendar()) {
+      errores.push(`Solo se puede agendar hasta con ${DIAS_MAXIMOS_DE_ANTICIPACION} dias de anticipacion.`)
     }
     if (!esHoraValida(this.hora)) {
       errores.push('Elegi la hora de tu cita.')

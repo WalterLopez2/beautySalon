@@ -8,6 +8,7 @@ const TEXTO_DE_ACCION: Record<EstadoCita, string> = {
   confirmada: 'Confirmar',
   atendida: 'Marcar atendida',
   cancelada: 'Cancelar',
+  vencida: 'Vencer',
 }
 
 interface Props {
@@ -22,7 +23,15 @@ export function TarjetaDeCita({ item, enProceso, onCambiarEstado }: Props) {
   return (
     <article aria-busy={enProceso}>
       <p>{cita.franja.etiqueta()}</p>
-      <h3>{clienta.nombre}</h3>
+      <h3>{item.nombreEscrito}</h3>
+      {item.nombreDistintoAlDeLaFicha() && (
+        <p>
+          <strong>Ojo:</strong> ese telefono esta registrado a nombre de {clienta.nombre}.
+        </p>
+      )}
+      {item.telefonoSinVerificar() && (
+        <p>Telefono sin verificar: escribele por WhatsApp antes de confirmar.</p>
+      )}
       <p>{cita.servicioNombre}</p>
       <p>{cita.precioFormateado()}</p>
       <p>{cita.etiquetaDeEstado()}</p>

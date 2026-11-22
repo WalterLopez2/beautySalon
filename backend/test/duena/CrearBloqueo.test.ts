@@ -15,6 +15,7 @@ function cita(id: number, inicio: string, estado: EstadoCita): CitaRegistrada {
     duracionMin: 60,
     estado,
     precio: 250,
+    nombreEscrito: 'Ana',
     clienta: { id: 7, nombre: 'Ana', telefono: '99990000', correo: null },
   };
 }

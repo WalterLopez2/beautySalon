@@ -19,6 +19,11 @@ type Entorno = Record<string, string | undefined>;
 
 const LONGITUD_MINIMA_DEL_SECRETO = 32;
 const SOLO_ESTA_COMPUTADORA = '127.0.0.1';
+// Si la base acepta la conexion y no contesta (red caida, firewall), el pedido
+// falla en vez de quedar colgado. Los mide la API, asi que sirven aunque el
+// servidor de la base ya no responda.
+const MAXIMO_PARA_CONECTAR_MS = 5_000;
+const MAXIMO_POR_CONSULTA_MS = 10_000;
 const MILISEGUNDOS_POR_HORA = 60 * 60 * 1000;
 
 export interface OpcionesDeArranque {
@@ -77,6 +82,8 @@ export function leerConfiguracionDeBaseDeDatos(entorno: Entorno = process.env): 
     user: leerObligatoria(entorno, 'DB_USER'),
     password: entorno.DB_PASSWORD ?? '',
     ssl: leerSslDeBaseDeDatos(entorno),
+    connectionTimeoutMillis: MAXIMO_PARA_CONECTAR_MS,
+    query_timeout: MAXIMO_POR_CONSULTA_MS,
   };
 }
 

@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import type { HorarioSemanal } from '../../compartido/dominio/horario';
 import { aHorarioDeUnDia } from '../../compartido/dominio/horario';
+import { DURACION_MAXIMA, LARGO_MAXIMO } from '../../compartido/dominio/limitesDeDatos';
 import { NoEncontrado } from '../../compartido/errores';
 import {
   leerBooleano,
@@ -86,11 +87,11 @@ function existente(servicio: ServicioDelPanel | null): ServicioDelPanel {
 function leerDatosServicio(cuerpo: unknown): DatosServicio {
   const datos = leerObjeto(cuerpo, 'el servicio');
   return leerCampos<DatosServicio>({
-    nombre: () => leerTexto(datos.nombre, 'nombre'),
-    descripcion: () => leerTextoOpcional(datos.descripcion, 'descripcion'),
+    nombre: () => leerTexto(datos.nombre, 'nombre', LARGO_MAXIMO.nombre),
+    descripcion: () => leerTextoOpcional(datos.descripcion, 'descripcion', LARGO_MAXIMO.descripcion),
     precio: () => leerMonto(datos.precio, 'precio'),
-    duracionMin: () => leerEnteroPositivo(datos.duracionMin, 'duracionMin'),
-    categoria: () => leerTextoOpcional(datos.categoria, 'categoria'),
+    duracionMin: () => leerEnteroPositivo(datos.duracionMin, 'duracionMin', DURACION_MAXIMA),
+    categoria: () => leerTextoOpcional(datos.categoria, 'categoria', LARGO_MAXIMO.categoria),
   });
 }
 
@@ -101,7 +102,7 @@ function leerHorarioSemanal(cuerpo: unknown): HorarioSemanal {
   return leerCampos<HorarioSemanal>({
     configuracion: () =>
       leerCampos({
-        zonaHoraria: () => leerTexto(datos.zonaHoraria, 'zonaHoraria'),
+        zonaHoraria: () => leerTexto(datos.zonaHoraria, 'zonaHoraria', LARGO_MAXIMO.zonaHoraria),
         intervaloMin: () => leerEnteroPositivo(datos.intervaloMin, 'intervaloMin'),
         maxCitasPendientes: () => leerEnteroPositivo(datos.maxCitasPendientes, 'maxCitasPendientes'),
       }),

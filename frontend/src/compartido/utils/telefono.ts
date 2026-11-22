@@ -1,10 +1,11 @@
-// Misma regla que el backend: un telefono sirve si tiene suficientes digitos,
-// sin importar espacios ni guiones.
+// Misma regla que el backend: 8 digitos de Honduras, con o sin +504, sin
+// importar espacios ni guiones.
 
-const DIGITOS_MINIMOS = 8 // formato de Honduras
+const SEPARADORES = /[\s().+-]/g
+const TELEFONO_DE_HONDURAS = /^(504)?\d{8}$/
 
-export const TELEFONO_INVALIDO = `El telefono debe tener al menos ${DIGITOS_MINIMOS} digitos.`
+export const TELEFONO_INVALIDO = 'El telefono debe tener 8 digitos de Honduras (puede llevar +504).'
 
 export function esTelefonoValido(telefono: string): boolean {
-  return telefono.replace(/\D/g, '').length >= DIGITOS_MINIMOS
+  return TELEFONO_DE_HONDURAS.test(telefono.replace(SEPARADORES, ''))
 }

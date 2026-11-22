@@ -3,6 +3,7 @@
 
 import { Cita } from '../../../compartido/dominio/Cita.ts'
 import type { CitaDelPanelDTO, EstadoCita } from '../../../compartido/tipos/api.ts'
+import { normalizarTexto } from '../../../compartido/utils/texto.ts'
 import { Clienta } from '../clientas/Clienta.ts'
 
 // Acciones del panel, en el orden en que se muestran los botones.
@@ -11,14 +12,26 @@ const ACCIONES_EN_ORDEN: readonly EstadoCita[] = ['confirmada', 'atendida', 'can
 export class CitaDelPanel {
   readonly cita: Cita
   readonly clienta: Clienta
+  readonly nombreEscrito: string
 
-  constructor(cita: Cita, clienta: Clienta) {
+  constructor(cita: Cita, clienta: Clienta, nombreEscrito: string) {
     this.cita = cita
     this.clienta = clienta
+    this.nombreEscrito = nombreEscrito
   }
 
   static desdeDTO(dto: CitaDelPanelDTO): CitaDelPanel {
-    return new CitaDelPanel(Cita.desdeDTO(dto), Clienta.desdeDTO(dto.clienta))
+    return new CitaDelPanel(Cita.desdeDTO(dto), Clienta.desdeDTO(dto.clienta), dto.nombreEscrito)
+  }
+
+  // Mientras la duena no la confirme, nadie comprobo de quien es el telefono.
+  telefonoSinVerificar(): boolean {
+    return this.cita.estaPendiente()
+  }
+
+  // Puede ser un familiar, o alguien usando un telefono ajeno.
+  nombreDistintoAlDeLaFicha(): boolean {
+    return normalizarTexto(this.nombreEscrito) !== normalizarTexto(this.clienta.nombre)
   }
 
   get id(): number {

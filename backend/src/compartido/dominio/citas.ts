@@ -1,7 +1,13 @@
 // Logica de citas del salon. Las horas se manejan en minutos desde la
 // medianoche (por ejemplo 9:30 = 570) para compararlas facil.
 
-export type EstadoCita = 'pendiente' | 'confirmada' | 'atendida' | 'cancelada';
+export type EstadoCita = 'pendiente' | 'confirmada' | 'atendida' | 'cancelada' | 'vencida';
+
+// Una solicitud que la duena no confirma en este plazo libera su hora. Debe
+// coincidir con `Cita.ts` del frontend.
+export const HORAS_PARA_CONFIRMAR = 24;
+
+const ESTADOS_QUE_LIBERAN: readonly EstadoCita[] = ['cancelada', 'vencida'];
 
 export interface Cita {
   fecha: string; // formato YYYY-MM-DD
@@ -10,6 +16,8 @@ export interface Cita {
   estado: EstadoCita;
   precio: number;
 }
+
+export const HORA_NO_DISPONIBLE = 'Esa hora ya no esta disponible. Elegi otra, por favor.';
 
 export function horaAMinutos(hora: string): number {
   const [h, m] = hora.split(':').map(Number);
@@ -35,10 +43,10 @@ function aFranja(cita: Cita): Franja {
   return { inicioMin: horaAMinutos(cita.inicio), duracionMin: cita.duracionMin };
 }
 
-// Las citas canceladas liberan el horario.
+// Las citas canceladas y las vencidas liberan el horario.
 export function horarioDisponible(nueva: Cita, existentes: Cita[]): boolean {
   return !existentes
-    .filter((c) => c.estado !== 'cancelada')
+    .filter((c) => !ESTADOS_QUE_LIBERAN.includes(c.estado))
     .some((c) => citasSeCruzan(nueva, c));
 }
 
@@ -49,19 +57,21 @@ export function totalIngresos(citas: Cita[]): number {
     .reduce((suma, c) => suma + c.precio, 0);
 }
 
-export const ESTADOS_CITA: readonly EstadoCita[] = ['pendiente', 'confirmada', 'atendida', 'cancelada'];
+export const ESTADOS_CITA: readonly EstadoCita[] = ['pendiente', 'confirmada', 'atendida', 'cancelada', 'vencida'];
 
 export function esEstadoCita(valor: unknown): valor is EstadoCita {
   return ESTADOS_CITA.includes(valor as EstadoCita);
 }
 
 // Ciclo de vida de una cita (el mismo que aplica el frontend).
-// "atendida" y "cancelada" son finales.
+// "atendida", "cancelada" y "vencida" son finales. A "vencida" solo pasa el
+// sistema (`VencerCitasPendientes`), nadie la pone a mano.
 const TRANSICIONES_PERMITIDAS: Record<EstadoCita, readonly EstadoCita[]> = {
   pendiente: ['confirmada', 'cancelada'],
   confirmada: ['atendida', 'cancelada'],
   atendida: [],
   cancelada: [],
+  vencida: [],
 };
 
 export function sePuedeCambiarDeEstado(desde: EstadoCita, hacia: EstadoCita): boolean {

@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { horaAMinutos, minutosAHora } from '../../compartido/dominio/citas';
 import type { Bloqueo, DatosBloqueo } from '../../compartido/dominio/bloqueos';
+import { LARGO_MAXIMO } from '../../compartido/dominio/limitesDeDatos';
 import { NoEncontrado } from '../../compartido/errores';
 import {
   leerCampos,
@@ -75,7 +76,7 @@ function leerDatosBloqueo(cuerpo: unknown): DatosBloqueo {
     hasta: () => (datos.hasta === undefined ? null : leerFecha(datos.hasta, 'hasta')),
     inicio: () => leerHoraOpcional(datos.inicio, 'inicio'),
     fin: () => leerHoraOpcional(datos.fin, 'fin'),
-    motivo: () => leerTextoOpcional(datos.motivo, 'motivo'),
+    motivo: () => leerTextoOpcional(datos.motivo, 'motivo', LARGO_MAXIMO.motivo),
   });
 
   return {

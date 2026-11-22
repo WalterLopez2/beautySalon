@@ -5,17 +5,19 @@
 import { Router, type Request } from 'express';
 import { aCitaDTO } from '../compartido/citas/presentacion';
 import type { CitaRegistrada } from '../compartido/citas/repositorioCitas';
-import { esTelefonoValido, normalizarTelefono } from '../compartido/dominio/telefono';
+import { LARGO_MAXIMO } from '../compartido/dominio/limitesDeDatos';
+import { esTelefonoValido, normalizarTelefono, TELEFONO_INVALIDO } from '../compartido/dominio/telefono';
 import { DatosInvalidos } from '../compartido/errores';
 import {
   leerCampos,
+  leerCorreoOpcional,
   leerFecha,
   leerHora,
   leerIdentificador,
   leerObjeto,
   leerTexto,
-  leerTextoOpcional,
 } from '../compartido/http/entrada';
+import { sinCache } from '../compartido/seguridad/cabecerasDeSeguridad';
 import { hashDeCodigo } from '../compartido/seguridad/codigosDeConsulta';
 import type { LimitadorPorIp } from '../compartido/seguridad/LimitadorPorIp';
 import type { Servicio } from '../compartido/servicios/repositorioServicios';
@@ -29,6 +31,7 @@ export interface DependenciasDeLaClienta {
   agendarCita: { ejecutar(solicitud: SolicitudDeCita): Promise<CitaAgendada> };
   limites: {
     agendar: LimitadorPorIp;
+    agendarPorFecha: LimitadorPorIp;
     consultarHistorial: LimitadorPorIp;
   };
 }
@@ -41,6 +44,8 @@ interface ConsultaDeHistorial {
 export function crearRutasDeLaClienta(dependencias: DependenciasDeLaClienta): Router {
   const { consultarAgenda, servicios, citas, agendarCita, limites } = dependencias;
   const rutas = Router();
+  // Todo lo de /citas es privado o cambia a cada momento (codigo, citas, horas).
+  rutas.use('/citas', sinCache);
 
   rutas.get('/servicios', async (_peticion, respuesta) => {
     respuesta.json(await servicios.listarActivos());
@@ -52,8 +57,14 @@ export function crearRutasDeLaClienta(dependencias: DependenciasDeLaClienta): Ro
   });
 
   rutas.post('/citas', async (peticion, respuesta) => {
-    limites.agendar.consumir(ipDe(peticion));
-    const { cita, codigoDeConsulta } = await agendarCita.ejecutar(leerSolicitudDeCita(peticion.body));
+    const ip = ipDe(peticion);
+    limites.agendar.consumir(ip);
+    const solicitud = leerSolicitudDeCita(peticion.body);
+    limites.agendarPorFecha.consumir(ip, solicitud.fecha);
+    const { cita, codigoDeConsulta } = await agendarCita.ejecutar(solicitud).catch((error: unknown) => {
+      limites.agendarPorFecha.devolver(ip, solicitud.fecha); // el cupo del dia es para citas hechas
+      throw error;
+    });
     // Unica vez que el codigo sale del servidor: la clienta debe guardarlo.
     respuesta.status(201).json({ ...aCitaDTO(cita), codigoDeConsulta });
   });
@@ -85,9 +96,9 @@ function leerSolicitudDeCita(cuerpo: unknown): SolicitudDeCita {
     contacto: () => {
       const contacto = leerObjeto(solicitud.contacto, 'contacto');
       return leerCampos({
-        nombre: () => leerTexto(contacto.nombre, 'nombre'),
-        telefono: () => leerTexto(contacto.telefono, 'telefono'),
-        correo: () => leerTextoOpcional(contacto.correo, 'correo'),
+        nombre: () => leerTexto(contacto.nombre, 'nombre', LARGO_MAXIMO.nombre),
+        telefono: () => leerTexto(contacto.telefono, 'telefono', LARGO_MAXIMO.telefono),
+        correo: () => leerCorreoOpcional(contacto.correo, 'correo'),
       });
     },
   });
@@ -96,11 +107,11 @@ function leerSolicitudDeCita(cuerpo: unknown): SolicitudDeCita {
 function leerConsultaDeHistorial(cuerpo: unknown): ConsultaDeHistorial {
   const datos = leerObjeto(cuerpo, 'la consulta');
   const consulta = leerCampos<ConsultaDeHistorial>({
-    telefono: () => leerTexto(datos.telefono, 'telefono'),
-    codigo: () => leerTexto(datos.codigo, 'codigo'),
+    telefono: () => leerTexto(datos.telefono, 'telefono', LARGO_MAXIMO.telefono),
+    codigo: () => leerTexto(datos.codigo, 'codigo', LARGO_MAXIMO.codigo),
   });
   if (!esTelefonoValido(consulta.telefono)) {
-    throw new DatosInvalidos(['El telefono debe tener al menos 8 digitos.']);
+    throw new DatosInvalidos([TELEFONO_INVALIDO]);
   }
   return consulta;
 }

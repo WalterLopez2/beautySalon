@@ -15,6 +15,8 @@ export const LIMITES = {
   loginPorIp: { intentos: 20, ventanaMs: 15 * MINUTO },
   // Citas que se pueden pedir desde una misma IP.
   agendarPorIp: { intentos: 10, ventanaMs: HORA },
+  // Citas para un mismo dia desde una IP: nadie llena la agenda de un dia solo.
+  agendarPorIpYFecha: { intentos: 5, ventanaMs: 24 * HORA },
   // Consultas de historial con codigo (evita adivinar codigos).
   consultarHistorialPorIp: { intentos: 20, ventanaMs: 15 * MINUTO },
 } satisfies Record<string, ReglaDeLimite>;

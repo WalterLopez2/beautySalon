@@ -4,6 +4,7 @@
 
 import { DatosInvalidos } from '../errores';
 import { horaAMinutos, minutosAHora } from './citas';
+import { diasEntre } from './fechas';
 
 export interface ConfiguracionDelSalon {
   zonaHoraria: string; // IANA, por ejemplo "America/Tegucigalpa"
@@ -36,6 +37,9 @@ export interface MomentoDelSalon {
 export const INTERVALO_MINIMO = 5;
 export const INTERVALO_MAXIMO = 240;
 export const MAX_CITAS_PENDIENTES_TOPE = 50;
+// Nadie puede llenar la agenda de los proximos anos. Debe coincidir con
+// `plazoDeReserva.ts` del frontend.
+export const DIAS_MAXIMOS_DE_ANTICIPACION = 60;
 const DIAS_POR_SEMANA = 7;
 
 // ----- Reglas que usa el agendamiento -----
@@ -76,6 +80,10 @@ export function momentoEn(zonaHoraria: string, ahora: Date = new Date()): Moment
 
 export function yaPaso(fecha: string, inicioMin: number, ahora: MomentoDelSalon): boolean {
   return fecha < ahora.fecha || (fecha === ahora.fecha && inicioMin <= ahora.minuto);
+}
+
+export function esDemasiadoLejos(fecha: string, ahora: MomentoDelSalon): boolean {
+  return diasEntre(ahora.fecha, fecha) > DIAS_MAXIMOS_DE_ANTICIPACION;
 }
 
 // ----- Reglas que usa la duena al guardar su horario -----

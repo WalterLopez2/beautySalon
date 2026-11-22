@@ -3,7 +3,7 @@
 // servidor haya aceptado.
 //
 // Ocultar el panel aqui es solo experiencia de usuario: la proteccion real
-// esta en el backend, que rechaza cualquier pedido sin un token valido.
+// esta en el backend, que rechaza cualquier pedido sin una sesion valida.
 
 import { FormularioDeLogin } from './componentes/FormularioDeLogin.tsx'
 import { PanelDeLaDuena } from './componentes/PanelDeLaDuena.tsx'
@@ -17,7 +17,13 @@ export default function VistaDuena() {
   }
 
   if (sesion.estado === 'con-sesion' && sesion.sesion) {
-    return <PanelDeLaDuena sesion={sesion.sesion} onCerrarSesion={() => void sesion.cerrar()} />
+    return (
+      <PanelDeLaDuena
+        sesion={sesion.sesion}
+        aviso={sesion.aviso}
+        onCerrarSesion={() => void sesion.cerrar()}
+      />
+    )
   }
 
   return (

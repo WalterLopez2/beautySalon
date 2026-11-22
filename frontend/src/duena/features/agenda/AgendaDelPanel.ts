@@ -38,9 +38,9 @@ export class AgendaDelPanel {
     return this.conEstado('pendiente')
   }
 
-  // Sin canceladas: es lo que de verdad va a pasar en el dia.
+  // Sin canceladas ni vencidas: es lo que de verdad va a pasar en el dia.
   activas(): CitaDelPanel[] {
-    return this.citas.filter((item) => !item.cita.estaCancelada())
+    return this.citas.filter((item) => item.cita.ocupaSuHorario())
   }
 
   // La siguiente clienta confirmada que todavia no termina, a partir de HH:MM.

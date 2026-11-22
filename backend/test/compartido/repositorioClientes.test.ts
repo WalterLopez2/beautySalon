@@ -28,14 +28,6 @@ function crearBaseDeDatos(
 }
 
 describe('RepositorioClientes', () => {
-  it('crea la tabla de clientas', async () => {
-    const { baseDeDatos, query } = crearBaseDeDatos();
-
-    await new RepositorioClientes(baseDeDatos).crearTabla();
-
-    expect(query).toHaveBeenCalledWith(expect.stringContaining('CREATE TABLE IF NOT EXISTS clientes'));
-  });
-
   it('crea una clienta con datos normalizados y parámetros SQL', async () => {
     const { baseDeDatos, query } = crearBaseDeDatos([fila]);
     const datos: DatosCliente = {

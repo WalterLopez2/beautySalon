@@ -6,6 +6,7 @@ import { crearRutasDeLaClienta, type DependenciasDeLaClienta } from './clienta/r
 import { manejadorDeErrores, rutaNoEncontrada } from './compartido/http/manejadorDeErrores';
 import { cabecerasDeSeguridad } from './compartido/seguridad/cabecerasDeSeguridad';
 import { exigirHttps } from './compartido/seguridad/exigirHttps';
+import { CookieDeSesion } from './duena/autenticacion/cookieDeSesion';
 import { crearRutasDeLaDuena, type DependenciasDeLaDuena } from './duena/rutas';
 
 export interface DependenciasDeLaApp {
@@ -43,7 +44,8 @@ export function crearApp(
   if (soloHttps) app.use(exigirHttps);
   app.use(express.json({ limit: '10kb' })); // ningun pedido legitimo pesa mas
   app.use(PREFIJO_DE_LA_API, crearRutasDeLaClienta(clienta));
-  app.use(PREFIJO_DE_LA_API, crearRutasDeLaDuena(duena));
+  const cookie = new CookieDeSesion({ ruta: `${PREFIJO_DE_LA_API}/panel`, segura: soloHttps });
+  app.use(PREFIJO_DE_LA_API, crearRutasDeLaDuena(duena, cookie));
 
   app.use(rutaNoEncontrada);
   app.use(manejadorDeErrores);

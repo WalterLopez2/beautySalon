@@ -16,10 +16,11 @@ import { SeccionIngresos } from './ingresos/SeccionIngresos.tsx'
 
 interface Props {
   sesion: Sesion
+  aviso: string | null
   onCerrarSesion: () => void
 }
 
-export function PanelDeLaDuena({ sesion, onCerrarSesion }: Props) {
+export function PanelDeLaDuena({ sesion, aviso, onCerrarSesion }: Props) {
   const [seccion, setSeccion] = useState<IdDeSeccion>(SECCION_INICIAL)
   // La fecha se comparte entre agenda e ingresos: al cambiar de seccion no se pierde.
   const [fecha, setFecha] = useState(hoy())
@@ -33,6 +34,7 @@ export function PanelDeLaDuena({ sesion, onCerrarSesion }: Props) {
         </button>
       </header>
 
+      {aviso && <p role="alert">{aviso}</p>}
       <MenuDelPanel seccionActual={seccion} onElegir={setSeccion} />
 
       <main id="contenido-del-panel">

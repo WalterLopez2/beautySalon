@@ -5,6 +5,7 @@
 // y borrarlo romperia el historial y los reportes de ingresos.
 
 import type { Consultor } from '../baseDeDatos/baseDeDatos';
+import { esErrorDePostgres, VIOLACION_DE_UNICIDAD } from '../baseDeDatos/erroresDePostgres';
 import { Conflicto } from '../errores';
 
 export interface DatosServicio {
@@ -34,27 +35,12 @@ interface FilaServicio {
 }
 
 const COLUMNAS = 'id, nombre, descripcion, precio, duracion_min, categoria, activo';
-const VIOLACION_DE_UNICIDAD = '23505'; // codigo de error de PostgreSQL
 
 export class RepositorioServicios {
   private readonly baseDeDatos: Consultor;
 
   constructor(baseDeDatos: Consultor) {
     this.baseDeDatos = baseDeDatos;
-  }
-
-  async crearTabla(): Promise<void> {
-    await this.baseDeDatos.query(`
-      CREATE TABLE IF NOT EXISTS servicios (
-        id SERIAL PRIMARY KEY,
-        nombre VARCHAR(120) NOT NULL UNIQUE,
-        descripcion TEXT,
-        precio NUMERIC(10, 2) NOT NULL CHECK (precio >= 0),
-        duracion_min INTEGER NOT NULL CHECK (duracion_min > 0),
-        categoria VARCHAR(60),
-        activo BOOLEAN NOT NULL DEFAULT TRUE
-      )
-    `);
   }
 
   // ----- Vista publica -----
@@ -125,16 +111,12 @@ export class RepositorioServicios {
     try {
       return await consulta();
     } catch (error) {
-      if (esViolacionDeUnicidad(error)) {
+      if (esErrorDePostgres(error, VIOLACION_DE_UNICIDAD)) {
         throw new Conflicto('Ya existe un servicio con ese nombre.');
       }
       throw error;
     }
   }
-}
-
-function esViolacionDeUnicidad(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && error.code === VIOLACION_DE_UNICIDAD;
 }
 
 function aServicioPublico(fila: FilaServicio): Servicio {

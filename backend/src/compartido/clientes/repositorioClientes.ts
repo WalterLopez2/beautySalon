@@ -1,3 +1,5 @@
+import { esCorreoValido } from '../dominio/correo';
+
 type ValorSQL = string | number | null;
 
 interface ClienteRow {
@@ -44,7 +46,7 @@ function validarDatos(datos: DatosCliente): DatosCliente {
   if (!telefono) {
     throw new Error('El teléfono de la clienta es obligatorio.');
   }
-  if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+  if (correo && !esCorreoValido(correo)) {
     throw new Error('El correo electrónico no es válido.');
   }
 
@@ -63,18 +65,6 @@ function convertirCliente(row: ClienteRow): Cliente {
 
 export class RepositorioClientes {
   constructor(private readonly baseDeDatos: BaseDeDatosClientes) {}
-
-  async crearTabla(): Promise<void> {
-    await this.baseDeDatos.query(`
-      CREATE TABLE IF NOT EXISTS clientes (
-        id SERIAL PRIMARY KEY,
-        nombre VARCHAR(120) NOT NULL,
-        telefono VARCHAR(30) NOT NULL,
-        correo VARCHAR(254),
-        creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-  }
 
   async crear(datos: DatosCliente): Promise<Cliente> {
     const cliente = validarDatos(datos);

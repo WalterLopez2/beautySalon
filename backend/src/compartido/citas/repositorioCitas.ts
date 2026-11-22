@@ -3,7 +3,10 @@
 // agendar: si manana cambia el precio, las citas viejas no se alteran.
 
 import type { Consultor } from '../baseDeDatos/baseDeDatos';
-import { minutosAHora, type EstadoCita } from '../dominio/citas';
+import { esErrorDePostgres, VIOLACION_DE_EXCLUSION } from '../baseDeDatos/erroresDePostgres';
+import { HORA_NO_DISPONIBLE, minutosAHora, type EstadoCita } from '../dominio/citas';
+import type { MomentoDelSalon } from '../dominio/horario';
+import { Conflicto } from '../errores';
 
 export interface ClientaDeLaCita {
   id: number;
@@ -21,6 +24,9 @@ export interface CitaRegistrada {
   duracionMin: number;
   estado: EstadoCita;
   precio: number;
+  // Lo que escribieron al agendar. Puede no ser el nombre de la ficha: el
+  // telefono no se verifica.
+  nombreEscrito: string;
   clienta: ClientaDeLaCita;
 }
 
@@ -36,6 +42,7 @@ export interface NuevaCita {
   inicioMin: number;
   duracionMin: number;
   precio: number;
+  nombreEscrito: string;
   codigoHash: string; // hash del codigo de consulta que recibe la clienta
 }
 
@@ -48,6 +55,7 @@ interface FilaCita {
   duracion_min: number;
   estado: EstadoCita;
   precio: string;
+  nombre_escrito: string;
   cliente_id: number;
   cliente_nombre: string;
   cliente_telefono: string;
@@ -59,7 +67,7 @@ interface FilaCita {
 const SELECCION_COMPLETA = `
   SELECT c.id, c.servicio_id, s.nombre AS servicio_nombre,
          to_char(c.fecha, 'YYYY-MM-DD') AS fecha, c.inicio_min, c.duracion_min,
-         c.estado, c.precio,
+         c.estado, c.precio, c.nombre_escrito,
          cl.id AS cliente_id, cl.nombre AS cliente_nombre,
          cl.telefono AS cliente_telefono, cl.correo AS cliente_correo
   FROM citas c
@@ -76,26 +84,6 @@ export class RepositorioCitas {
     this.baseDeDatos = baseDeDatos;
   }
 
-  async crearTabla(): Promise<void> {
-    await this.baseDeDatos.query(`
-      CREATE TABLE IF NOT EXISTS citas (
-        id SERIAL PRIMARY KEY,
-        cliente_id INTEGER NOT NULL REFERENCES clientes (id),
-        servicio_id INTEGER NOT NULL REFERENCES servicios (id),
-        fecha DATE NOT NULL,
-        inicio_min INTEGER NOT NULL CHECK (inicio_min BETWEEN 0 AND 1439),
-        duracion_min INTEGER NOT NULL CHECK (duracion_min > 0),
-        precio NUMERIC(10, 2) NOT NULL CHECK (precio >= 0),
-        estado VARCHAR(12) NOT NULL DEFAULT 'pendiente'
-          CHECK (estado IN ('pendiente', 'confirmada', 'atendida', 'cancelada')),
-        codigo_hash CHAR(64) NOT NULL,
-        creada_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-    await this.baseDeDatos.query('CREATE INDEX IF NOT EXISTS citas_fecha_idx ON citas (fecha)');
-    await this.baseDeDatos.query('CREATE INDEX IF NOT EXISTS citas_cliente_idx ON citas (cliente_id)');
-  }
-
   // Evita que dos clientas tomen la misma hora al mismo tiempo: mientras dure
   // la transaccion, nadie mas puede agendar en ese dia. Se libera sola al
   // terminar (COMMIT o ROLLBACK). Solo tiene efecto dentro de una transaccion.
@@ -103,11 +91,18 @@ export class RepositorioCitas {
     await this.baseDeDatos.query("SELECT pg_advisory_xact_lock(hashtext('citas:' || $1))", [fecha]);
   }
 
-  // Las canceladas no ocupan: liberan su horario.
+  // El candado del dia no alcanza para el maximo por clienta: dos pedidos del
+  // mismo telefono en dias distintos contarian a la vez. Se toma siempre
+  // despues del candado del dia, asi dos transacciones no se esperan entre si.
+  async bloquearTelefono(telefono: string): Promise<void> {
+    await this.baseDeDatos.query("SELECT pg_advisory_xact_lock(hashtext('telefono:' || $1))", [telefono]);
+  }
+
+  // Las canceladas y las vencidas no ocupan: liberan su horario.
   async ocupadasEl(fecha: string): Promise<FranjaOcupada[]> {
     const resultado = await this.baseDeDatos.query<{ inicio_min: number; duracion_min: number }>(
       `SELECT inicio_min, duracion_min FROM citas
-       WHERE fecha = $1 AND estado <> 'cancelada'
+       WHERE fecha = $1 AND estado NOT IN ('cancelada', 'vencida')
        ORDER BY inicio_min`,
       [fecha],
     );
@@ -115,17 +110,36 @@ export class RepositorioCitas {
   }
 
   async crear(cita: NuevaCita): Promise<CitaRegistrada> {
-    const resultado = await this.baseDeDatos.query<{ id: number }>(
-      `INSERT INTO citas (cliente_id, servicio_id, fecha, inicio_min, duracion_min, precio, codigo_hash)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id`,
-      [cita.clienteId, cita.servicioId, cita.fecha, cita.inicioMin, cita.duracionMin, cita.precio, cita.codigoHash],
-    );
-    const creada = await this.obtenerPorId(resultado.rows[0].id);
+    const id = await this.insertar(cita).catch((error: unknown) => {
+      // Ultima barrera: la base no acepta dos citas en la misma hora.
+      if (esErrorDePostgres(error, VIOLACION_DE_EXCLUSION)) throw new Conflicto(HORA_NO_DISPONIBLE);
+      throw error;
+    });
+    const creada = await this.obtenerPorId(id);
     if (!creada) {
       throw new Error('No se pudo leer la cita recien creada.');
     }
     return creada;
+  }
+
+  private async insertar(cita: NuevaCita): Promise<number> {
+    const resultado = await this.baseDeDatos.query<{ id: number }>(
+      `INSERT INTO citas
+         (cliente_id, servicio_id, fecha, inicio_min, duracion_min, precio, nombre_escrito, codigo_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id`,
+      [
+        cita.clienteId,
+        cita.servicioId,
+        cita.fecha,
+        cita.inicioMin,
+        cita.duracionMin,
+        cita.precio,
+        cita.nombreEscrito,
+        cita.codigoHash,
+      ],
+    );
+    return resultado.rows[0].id;
   }
 
   async obtenerPorId(id: number): Promise<CitaRegistrada | null> {
@@ -150,6 +164,18 @@ export class RepositorioCitas {
       [telefono, desdeFecha],
     );
     return Number(resultado.rows[0].cantidad);
+  }
+
+  // Solo las que aun no empiezan: si la hora ya llego, la clienta pudo asistir
+  // y la duena todavia tiene que poder confirmarla y cobrarla.
+  async vencerPendientes(pedidasAntesDe: Date, ahora: MomentoDelSalon): Promise<number> {
+    const resultado = await this.baseDeDatos.query(
+      `UPDATE citas SET estado = 'vencida'
+       WHERE estado = 'pendiente' AND creada_en <= $1
+         AND (fecha > $2 OR (fecha = $2 AND inicio_min > $3))`,
+      [pedidasAntesDe.toISOString(), ahora.fecha, ahora.minuto],
+    );
+    return resultado.rowCount ?? 0;
   }
 
   async listarPorCliente(clienteId: number): Promise<CitaRegistrada[]> {
@@ -190,6 +216,7 @@ function aCitaRegistrada(fila: FilaCita): CitaRegistrada {
     duracionMin: fila.duracion_min,
     estado: fila.estado,
     precio: Number(fila.precio),
+    nombreEscrito: fila.nombre_escrito,
     clienta: {
       id: fila.cliente_id,
       nombre: fila.cliente_nombre,

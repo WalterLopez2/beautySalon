@@ -35,6 +35,14 @@ export class Conflicto extends Error {
   }
 }
 
+// Un pedido que no salio de la propia pagina (CSRF).
+export class PeticionNoPermitida extends Error {
+  constructor() {
+    super('Esta accion solo se puede hacer desde la pagina del salon.');
+    this.name = 'PeticionNoPermitida';
+  }
+}
+
 // Llego por HTTP plano y el servidor solo atiende por HTTPS.
 export class HttpsRequerido extends Error {
   constructor() {

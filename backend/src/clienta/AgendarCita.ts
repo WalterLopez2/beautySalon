@@ -10,17 +10,19 @@
 import type { CitaRegistrada, FranjaOcupada, NuevaCita } from '../compartido/citas/repositorioCitas';
 import type { Cliente, DatosCliente } from '../compartido/clientes/repositorioClientes';
 import { cierraElDia, franjasBloqueadas, type Bloqueo } from '../compartido/dominio/bloqueos';
-import { franjasSeCruzan, horaAMinutos } from '../compartido/dominio/citas';
+import { franjasSeCruzan, HORA_NO_DISPONIBLE, horaAMinutos } from '../compartido/dominio/citas';
 import {
   cabeEnElHorario,
   diaDeLaSemana,
+  DIAS_MAXIMOS_DE_ANTICIPACION,
+  esDemasiadoLejos,
   momentoEn,
   respetaElIntervalo,
   yaPaso,
   type ConfiguracionDelSalon,
   type HorarioDelDia,
 } from '../compartido/dominio/horario';
-import { esTelefonoValido, normalizarTelefono } from '../compartido/dominio/telefono';
+import { esTelefonoValido, normalizarTelefono, TELEFONO_INVALIDO } from '../compartido/dominio/telefono';
 import { generarCodigoDeConsulta, hashDeCodigo } from '../compartido/seguridad/codigosDeConsulta';
 import { Conflicto, DatosInvalidos, NoEncontrado } from '../compartido/errores';
 import type { Servicio } from '../compartido/servicios/repositorioServicios';
@@ -47,6 +49,7 @@ export interface RepositoriosDeAgendamiento {
   };
   citas: {
     bloquearDia(fecha: string): Promise<void>;
+    bloquearTelefono(telefono: string): Promise<void>;
     ocupadasEl(fecha: string): Promise<FranjaOcupada[]>;
     crear(cita: NuevaCita): Promise<CitaRegistrada>;
     contarVigentesPorTelefono(telefono: string, desdeFecha: string): Promise<number>;
@@ -62,6 +65,11 @@ export interface CitaAgendada {
 export type EjecutarEnTransaccion = <T>(
   trabajo: (repositorios: RepositoriosDeAgendamiento) => Promise<T>,
 ) => Promise<T>;
+
+// No dice cuantas citas hay ni que el problema es el telefono: quien escribe
+// un telefono ajeno no tiene por que enterarse de eso.
+const NO_SE_PUEDE_AGENDAR_EN_LINEA =
+  'No pudimos agendar en linea con esos datos. Comunicate con el salon para reservar.';
 
 export const SALON_SIN_CONFIGURAR = 'El salon todavia no tiene su horario configurado. Intenta mas tarde.';
 
@@ -83,7 +91,7 @@ export class AgendarCita {
 
   async ejecutar(solicitud: SolicitudDeCita): Promise<CitaAgendada> {
     if (!esTelefonoValido(solicitud.contacto.telefono)) {
-      throw new DatosInvalidos(['El telefono debe tener al menos 8 digitos.']);
+      throw new DatosInvalidos([TELEFONO_INVALIDO]);
     }
     const inicioMin = horaAMinutos(solicitud.inicio);
 
@@ -95,6 +103,9 @@ export class AgendarCita {
       const ahora = momentoEn(configuracion.zonaHoraria, this.reloj());
       if (yaPaso(solicitud.fecha, inicioMin, ahora)) {
         throw new DatosInvalidos(['La fecha y hora de la cita ya pasaron.']);
+      }
+      if (esDemasiadoLejos(solicitud.fecha, ahora)) {
+        throw new DatosInvalidos([`Solo se puede agendar hasta con ${DIAS_MAXIMOS_DE_ANTICIPACION} dias de anticipacion.`]);
       }
 
       const horarioDelDia = await horario.horarioDelDia(diaDeLaSemana(solicitud.fecha));
@@ -115,15 +126,15 @@ export class AgendarCita {
       // Las horas que bloqueo la duena cuentan igual que las ya ocupadas.
       const noDisponibles = [...(await citas.ocupadasEl(solicitud.fecha)), ...franjasBloqueadas(bloqueosDelDia)];
       if (noDisponibles.some((ocupada) => franjasSeCruzan(ocupada, franja))) {
-        throw new Conflicto('Esa hora ya no esta disponible. Elegi otra, por favor.');
+        throw new Conflicto(HORA_NO_DISPONIBLE);
       }
 
       const telefono = normalizarTelefono(solicitud.contacto.telefono);
+      // Desde aqui, contar y crear la ficha de ese telefono es un solo paso.
+      await citas.bloquearTelefono(telefono);
       const vigentes = await citas.contarVigentesPorTelefono(telefono, ahora.fecha);
       if (vigentes >= configuracion.maxCitasPendientes) {
-        throw new Conflicto(
-          `Ya tienes ${vigentes} cita(s) por venir. Para agendar otra, espera a que pasen o comunicate con el salon.`,
-        );
+        throw new Conflicto(NO_SE_PUEDE_AGENDAR_EN_LINEA);
       }
 
       const clienta = await identificarClienta(clientes, { ...solicitud.contacto, telefono });
@@ -135,6 +146,7 @@ export class AgendarCita {
         inicioMin,
         duracionMin: servicio.duracionMin,
         precio: servicio.precio,
+        nombreEscrito: solicitud.contacto.nombre,
         codigoHash: hashDeCodigo(codigoDeConsulta),
       });
       return { cita, codigoDeConsulta };

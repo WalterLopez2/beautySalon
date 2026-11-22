@@ -1,4 +1,4 @@
-// Puerto y adaptador de las citas del panel (rutas protegidas con token).
+// Puerto y adaptador de las citas del panel (rutas protegidas con la sesion).
 
 import type { Http } from '../../../compartido/http/clienteHttp.ts'
 import type { CambioDeEstadoDTO, CitaDelPanelDTO, EstadoCita } from '../../../compartido/tipos/api.ts'

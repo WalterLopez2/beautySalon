@@ -24,26 +24,6 @@ export class RepositorioBloqueos {
     this.baseDeDatos = baseDeDatos;
   }
 
-  async crearTabla(): Promise<void> {
-    await this.baseDeDatos.query(`
-      CREATE TABLE IF NOT EXISTS bloqueos (
-        id SERIAL PRIMARY KEY,
-        desde DATE NOT NULL,
-        hasta DATE NOT NULL,
-        inicio_min INTEGER CHECK (inicio_min BETWEEN 0 AND 1439),
-        fin_min INTEGER CHECK (fin_min BETWEEN 1 AND 1440),
-        motivo VARCHAR(200),
-        creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        CHECK (desde <= hasta),
-        CHECK (
-          (inicio_min IS NULL AND fin_min IS NULL) OR
-          (inicio_min IS NOT NULL AND fin_min IS NOT NULL AND inicio_min < fin_min)
-        )
-      )
-    `);
-    await this.baseDeDatos.query('CREATE INDEX IF NOT EXISTS bloqueos_rango_idx ON bloqueos (desde, hasta)');
-  }
-
   // Los que aplican a una fecha concreta.
   async delDia(fecha: string): Promise<Bloqueo[]> {
     return this.listarDonde('$1 BETWEEN desde AND hasta', [fecha]);

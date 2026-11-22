@@ -65,6 +65,7 @@ function crearEscenario({
     },
     citas: {
       bloquearDia: vi.fn(async () => {}),
+      bloquearTelefono: vi.fn(async () => {}),
       ocupadasEl: vi.fn(async () => ocupadas),
       crear: vi.fn(async (nueva: NuevaCita) => ({ id: 99, ...nueva }) as unknown as CitaRegistrada),
       contarVigentesPorTelefono: vi.fn(async () => citasVigentes),
@@ -92,6 +93,7 @@ describe('AgendarCita', () => {
       inicioMin: 600,
       duracionMin: 60,
       precio: 250,
+      nombreEscrito: 'Ana López',
       codigoHash: hashDeCodigo(CODIGO),
     });
   });
@@ -108,9 +110,19 @@ describe('AgendarCita', () => {
   it('no deja pasar del maximo de citas pendientes que configuro la duena', async () => {
     const { caso, repositorios } = crearEscenario({ citasVigentes: 2 });
 
-    await expect(caso.ejecutar(solicitud)).rejects.toThrow('Ya tienes 2 cita(s) por venir');
+    await expect(caso.ejecutar(solicitud)).rejects.toThrow('No pudimos agendar en linea con esos datos');
     expect(repositorios.citas.contarVigentesPorTelefono).toHaveBeenCalledWith('99990000', '2026-11-10');
     expect(repositorios.citas.crear).not.toHaveBeenCalled();
+  });
+
+  it('al llegar al maximo no dice cuantas citas tiene ese telefono', async () => {
+    const mensajeCon = async (citasVigentes: number) => {
+      const { caso } = crearEscenario({ citasVigentes });
+      return caso.ejecutar(solicitud).then(String, (error: Error) => error.message);
+    };
+
+    expect(await mensajeCon(2)).toBe(await mensajeCon(9));
+    expect(await mensajeCon(2)).not.toMatch(/\d|cita\(s\)/);
   });
 
   it('consulta el horario del dia de la semana de la cita (martes = 2)', async () => {
@@ -130,6 +142,14 @@ describe('AgendarCita', () => {
     expect(repositorios.clientes.crear).not.toHaveBeenCalled();
   });
 
+  it('guarda el nombre que escribieron, sin confundirlo con el de la ficha', async () => {
+    const { caso, repositorios } = crearEscenario({ clientaExistente: ana });
+
+    await caso.ejecutar({ ...solicitud, contacto: { ...solicitud.contacto, nombre: 'Otra persona' } });
+
+    expect(repositorios.citas.crear).toHaveBeenCalledWith(expect.objectContaining({ nombreEscrito: 'Otra persona' }));
+  });
+
   it('bloquea el dia antes de revisar la disponibilidad', async () => {
     const { caso, repositorios } = crearEscenario();
 
@@ -138,6 +158,17 @@ describe('AgendarCita', () => {
     const bloqueo = repositorios.citas.bloquearDia.mock.invocationCallOrder[0];
     const revision = repositorios.citas.ocupadasEl.mock.invocationCallOrder[0];
     expect(bloqueo).toBeLessThan(revision);
+  });
+
+  it('bloquea el telefono antes de contar sus citas y de buscar su ficha', async () => {
+    const { caso, repositorios } = crearEscenario();
+
+    await caso.ejecutar(solicitud);
+
+    const candado = repositorios.citas.bloquearTelefono.mock.invocationCallOrder[0];
+    expect(repositorios.citas.bloquearTelefono).toHaveBeenCalledWith('99990000');
+    expect(candado).toBeLessThan(repositorios.citas.contarVigentesPorTelefono.mock.invocationCallOrder[0]);
+    expect(candado).toBeLessThan(repositorios.clientes.buscarPorTelefono.mock.invocationCallOrder[0]);
   });
 
   it('rechaza una hora que se cruza con otra cita', async () => {
@@ -210,6 +241,27 @@ describe('AgendarCita', () => {
 
     await expect(caso.ejecutar({ ...solicitud, inicio: '07:00' })).rejects.toBeInstanceOf(DatosInvalidos);
     expect(repositorios.servicios.obtenerActivoPorId).not.toHaveBeenCalled();
+  });
+
+  it('+504 no estrena un cupo: es la misma clienta', async () => {
+    const { caso, repositorios } = crearEscenario();
+
+    await caso.ejecutar({ ...solicitud, contacto: { ...solicitud.contacto, telefono: '+504 9999-0000' } });
+
+    expect(repositorios.citas.contarVigentesPorTelefono).toHaveBeenCalledWith('99990000', '2026-11-10');
+  });
+
+  it('acepta hasta 60 dias de anticipacion', async () => {
+    const { caso } = crearEscenario();
+
+    await expect(caso.ejecutar({ ...solicitud, fecha: '2027-01-09' })).resolves.toBeDefined();
+  });
+
+  it.each(['2027-01-10', '9999-06-01'])('rechaza agendar para el %s: es demasiado lejos', async (fecha) => {
+    const { caso, repositorios } = crearEscenario();
+
+    await expect(caso.ejecutar({ ...solicitud, fecha })).rejects.toThrow('60 dias');
+    expect(repositorios.citas.crear).not.toHaveBeenCalled();
   });
 
   it('rechaza un telefono demasiado corto', async () => {

@@ -1,7 +1,8 @@
-// Caso de uso: valida las credenciales, pide la sesion y la recuerda.
+// Caso de uso: valida las credenciales y pide la sesion. La recuerda el
+// navegador, en su cookie.
 
 import { ErrorDeValidacion } from '../../../compartido/dominio/ErrorDeValidacion.ts'
-import type { AlmacenDeSesion } from './almacenDeSesion.ts'
+import { ErrorDeApi } from '../../../compartido/http/clienteHttp.ts'
 import type { Credenciales } from './Credenciales.ts'
 import type { RepositorioSesion } from './repositorioSesion.ts'
 import type { Sesion } from './Sesion.ts'
@@ -15,11 +16,9 @@ export class CredencialesInvalidas extends ErrorDeValidacion {
 
 export class IniciarSesion {
   private readonly repositorio: RepositorioSesion
-  private readonly almacen: AlmacenDeSesion
 
-  constructor(repositorio: RepositorioSesion, almacen: AlmacenDeSesion) {
+  constructor(repositorio: RepositorioSesion) {
     this.repositorio = repositorio
-    this.almacen = almacen
   }
 
   async ejecutar(credenciales: Credenciales): Promise<Sesion> {
@@ -28,8 +27,12 @@ export class IniciarSesion {
       throw new CredencialesInvalidas(errores)
     }
 
-    const sesion = await this.repositorio.iniciar(credenciales.aDTO())
-    this.almacen.guardar(sesion)
-    return sesion
+    try {
+      return await this.repositorio.iniciar(credenciales.aDTO())
+    } catch (causa) {
+      // En el login un 401 es "clave incorrecta", no "tu sesion vencio".
+      if (causa instanceof ErrorDeApi && causa.esDeSesion()) throw new CredencialesInvalidas([causa.message])
+      throw causa
+    }
   }
 }

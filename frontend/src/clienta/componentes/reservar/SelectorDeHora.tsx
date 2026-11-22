@@ -3,6 +3,7 @@
 // configuro la duena; aqui solo se traduce cada estado a un mensaje.
 
 import type { Servicio } from '../../../compartido/dominio/Servicio.ts'
+import { ultimaFechaParaAgendar } from '../../../compartido/dominio/plazoDeReserva.ts'
 import { esFechaValida } from '../../../compartido/utils/fecha.ts'
 import { useAgendaDelDia } from '../../hooks/useAgendaDelDia.ts'
 import { OpcionesDeHora } from './OpcionesDeHora.tsx'
@@ -19,6 +20,10 @@ export function SelectorDeHora({ servicio, fecha, horaElegida, alElegir }: Props
 
   if (!servicio || !esFechaValida(fecha)) {
     return <p className="paso__aviso">Primero elige el servicio y el dia.</p>
+  }
+
+  if (fecha > ultimaFechaParaAgendar()) {
+    return <p className="paso__aviso">Todavia no se puede agendar para ese dia. Elige uno mas cercano.</p>
   }
 
   if (cargando) {

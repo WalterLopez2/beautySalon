@@ -9,7 +9,7 @@ import { ConsultarAgendaDelDia } from '../src/clienta/ConsultarAgendaDelDia';
 import type { CitaRegistrada } from '../src/compartido/citas/repositorioCitas';
 import { Cliente } from '../src/compartido/clientes/repositorioClientes';
 import type { Bloqueo } from '../src/compartido/dominio/bloqueos';
-import { NoAutorizado } from '../src/compartido/errores';
+import { Conflicto, NoAutorizado } from '../src/compartido/errores';
 import { hashDeCodigo } from '../src/compartido/seguridad/codigosDeConsulta';
 import { LimitadorPorIp } from '../src/compartido/seguridad/LimitadorPorIp';
 import { EmisorDeTokens } from '../src/duena/autenticacion/tokens';
@@ -44,6 +44,7 @@ const cita: CitaRegistrada = {
   duracionMin: 60,
   estado: 'pendiente',
   precio: 250,
+  nombreEscrito: 'Anita',
   clienta: { id: 7, nombre: 'Ana', telefono: TELEFONO_DE_ANA, correo: null },
 };
 
@@ -71,7 +72,8 @@ const repositorioDeBloqueos = {
 };
 
 // Limites bajos para poder comprobar el 429 sin cientos de peticiones.
-const limiteDeAgendar = new LimitadorPorIp({ intentos: 3, ventanaMs: UNA_HORA });
+const limiteDeAgendar = new LimitadorPorIp({ intentos: 60, ventanaMs: UNA_HORA });
+const limiteDeAgendarPorFecha = new LimitadorPorIp({ intentos: 8, ventanaMs: UNA_HORA });
 
 const app = crearApp({
   clienta: {
@@ -89,9 +91,15 @@ const app = crearApp({
       listarPorTelefonoYCodigo: async (telefono, codigoHash) =>
         telefono === TELEFONO_DE_ANA && codigoHash === hashDeCodigo(CODIGO_DE_ANA) ? [cita] : [],
     },
-    agendarCita: { ejecutar: async () => ({ cita, codigoDeConsulta: CODIGO_DE_ANA }) },
+    agendarCita: {
+      ejecutar: async ({ inicio }) => {
+        if (inicio === '23:00') throw new Conflicto('Esa hora no se puede.');
+        return { cita, codigoDeConsulta: CODIGO_DE_ANA };
+      },
+    },
     limites: {
       agendar: limiteDeAgendar,
+      agendarPorFecha: limiteDeAgendarPorFecha,
       consultarHistorial: new LimitadorPorIp({ intentos: 50, ventanaMs: UNA_HORA }),
     },
   },
@@ -147,14 +155,17 @@ function pedir(ruta: string, opciones: RequestInit = {}) {
   return fetch(`${base}${ruta}`, opciones);
 }
 
+// El encabezado que el frontend manda en cada pedido (proteccion CSRF).
+const DEL_FRONTEND = { 'X-Salon-Peticion': '1' };
+
 function conJson(metodo: string, cuerpo: unknown, token?: string): RequestInit {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...DEL_FRONTEND };
+  if (token) headers.Cookie = `sesionDuena=${token}`;
   return { method: metodo, headers, body: JSON.stringify(cuerpo) };
 }
 
 function conSesion(token = tokenNuevo()): RequestInit {
-  return { headers: { Authorization: `Bearer ${token}` } };
+  return { headers: { Cookie: `sesionDuena=${token}`, ...DEL_FRONTEND } };
 }
 
 const solicitudValida = {
@@ -204,6 +215,7 @@ describe('API publica (clienta)', () => {
     expect(respuesta.status).toBe(201);
     expect(cuerpo.codigoDeConsulta).toBe(CODIGO_DE_ANA);
     expect(cuerpo).not.toHaveProperty('clienta');
+    expect(cuerpo).not.toHaveProperty('nombreEscrito');
   });
 
   it('explica que dato esta mal', async () => {
@@ -221,6 +233,21 @@ describe('API publica (clienta)', () => {
     });
 
     expect(respuesta.status).toBe(400);
+  });
+
+  it.each([
+    ['nombre muy largo', { contacto: { nombre: 'a'.repeat(121), telefono: '99990000' } }],
+    ['telefono muy largo', { contacto: { nombre: 'Ana', telefono: '9'.repeat(40) } }],
+    ['correo invalido', { contacto: { nombre: 'Ana', telefono: '99990000', correo: 'malo' } }],
+    ['correo muy largo', { contacto: { nombre: 'Ana', telefono: '99990000', correo: `${'a'.repeat(250)}@x.com` } }],
+    ['caracter nulo', { contacto: { nombre: 'A\u0000na', telefono: '99990000' } }],
+    ['id mas grande que un INTEGER', { servicioId: 3_000_000_000 }],
+  ])('responde 400 con %s', async (_caso, cambios) => {
+    expect((await pedir('/citas', conJson('POST', { ...solicitudValida, ...cambios }))).status).toBe(400);
+  });
+
+  it('responde 413 si el cuerpo es demasiado grande', async () => {
+    expect((await pedir('/citas', conJson('POST', { relleno: 'a'.repeat(11_000) }))).status).toBe(413);
   });
 
   it('responde 404 en una ruta que no existe', async () => {
@@ -256,6 +283,14 @@ describe('Encabezados de seguridad', () => {
     expect(respuesta.headers.get('x-frame-options')).toBe('DENY');
     expect(respuesta.headers.get('content-security-policy')).toContain("default-src 'none'");
     expect(respuesta.headers.get('x-powered-by')).toBeNull();
+  });
+
+  it.each([
+    ['agendar (trae el codigo)', '/citas', conJson('POST', solicitudValida)],
+    ['consultar una cita', '/citas/consulta', conJson('POST', { telefono: TELEFONO_DE_ANA, codigo: CODIGO_DE_ANA })],
+    ['la agenda del dia', '/citas/agenda?fecha=2026-11-10', {}],
+  ])('%s no se guarda en cache', async (_caso, ruta, opciones) => {
+    expect((await pedir(ruta, opciones)).headers.get('cache-control')).toBe('no-store');
   });
 
   it('el panel no se guarda en cache', async () => {
@@ -351,12 +386,14 @@ describe('Frontera: las rutas del panel no existen fuera de /panel', () => {
 describe('API del panel (duena)', () => {
   it('inicia sesion y con ese token entra al panel', async () => {
     const login = await pedir('/auth/login', conJson('POST', { usuario: 'delmy', contrasena: 'correcta' }));
-    const { token } = await login.json();
+    const token = /sesionDuena=([^;]+)/.exec(login.headers.get('set-cookie') ?? '')?.[1];
 
     const respuesta = await pedir('/panel/citas?desde=2026-11-09&hasta=2026-11-15', conSesion(token));
 
     expect(respuesta.status).toBe(200);
-    expect((await respuesta.json())[0].clienta.nombre).toBe('Ana');
+    const [citaDelPanel] = await respuesta.json();
+    expect(citaDelPanel.clienta.nombre).toBe('Ana'); // su ficha
+    expect(citaDelPanel.nombreEscrito).toBe('Anita'); // lo que escribieron al agendar
   });
 
   it('responde 401 con credenciales incorrectas', async () => {
@@ -387,8 +424,57 @@ describe('API del panel (duena)', () => {
     const inexistente = await pedir('/panel/clientas/8/historial', conSesion());
 
     expect(existente.status).toBe(200);
-    expect((await existente.json()).citas).toHaveLength(1);
+    const { citas } = await existente.json();
+    expect(citas).toHaveLength(1);
+    expect(citas[0].nombreEscrito).toBe('Anita');
     expect(inexistente.status).toBe(404);
+  });
+});
+
+describe('Sesion en cookie', () => {
+  const entrar = () => pedir('/auth/login', conJson('POST', { usuario: 'delmy', contrasena: 'correcta' }));
+
+  it('el token viaja solo en una cookie que JavaScript no puede leer', async () => {
+    const login = await entrar();
+    const cookie = login.headers.get('set-cookie');
+
+    expect(Object.keys(await login.json()).sort()).toEqual(['expiraEn', 'nombre']);
+    expect(cookie).toContain('HttpOnly');
+    expect(cookie).toContain('SameSite=Strict');
+    expect(cookie).toContain('Path=/api/panel');
+  });
+
+  it('ya no acepta el token en Authorization', async () => {
+    const respuesta = await pedir('/panel/clientas', { headers: { Authorization: `Bearer ${tokenNuevo()}` } });
+
+    expect(respuesta.status).toBe(401);
+  });
+
+  it.each([
+    ['POST', '/panel/sesion/cerrar'],
+    ['PUT', '/panel/horario'],
+    ['PATCH', '/panel/citas/5/estado'],
+    ['DELETE', '/panel/bloqueos/1'],
+  ])('CSRF: %s %s con cookie pero sin el encabezado propio responde 403', async (method, ruta) => {
+    const respuesta = await pedir(ruta, { method, headers: { Cookie: `sesionDuena=${tokenNuevo()}` } });
+
+    expect(respuesta.status).toBe(403);
+  });
+
+  it('CSRF: otro sitio tampoco puede iniciar sesion', async () => {
+    const respuesta = await pedir('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario: 'delmy', contrasena: 'correcta' }),
+    });
+
+    expect(respuesta.status).toBe(403);
+  });
+
+  it('leer con GET no necesita el encabezado', async () => {
+    const respuesta = await pedir('/panel/clientas', { headers: { Cookie: `sesionDuena=${tokenNuevo()}` } });
+
+    expect(respuesta.status).toBe(200);
   });
 });
 
@@ -407,6 +493,7 @@ describe('API del panel: sesion', () => {
     const despues = await pedir('/panel/sesion', conSesion(token));
 
     expect(cierre.status).toBe(204);
+    expect(cierre.headers.get('set-cookie')).toMatch(/^sesionDuena=;.*Expires=Thu, 01 Jan 1970/);
     expect(despues.status).toBe(401);
   });
 });
@@ -439,6 +526,21 @@ describe('API del panel: configuracion del salon', () => {
 
     expect(respuesta.status).toBe(400);
     expect((await respuesta.json()).errores).toHaveLength(3);
+  });
+
+  it.each([
+    ['nombre muy largo', { nombre: 'a'.repeat(121) }],
+    ['categoria muy larga', { categoria: 'a'.repeat(61) }],
+    ['precio que no cabe en la base', { precio: 100_000_000 }],
+    ['duracion mayor a un dia', { duracionMin: 1441 }],
+  ])('responde 400 con un servicio con %s', async (_caso, cambios) => {
+    const servicio = { nombre: 'Pedicure', precio: 400, duracionMin: 90, ...cambios };
+
+    expect((await pedir('/panel/servicios', conJson('POST', servicio, tokenNuevo()))).status).toBe(400);
+  });
+
+  it('responde 400 si la direccion viene mal codificada', async () => {
+    expect((await pedir('/panel/clientas/%zz/historial', conSesion())).status).toBe(400);
   });
 
   it('pausa un servicio y responde 404 si no existe', async () => {
@@ -540,12 +642,29 @@ describe('API del panel: dias libres y bloqueos', () => {
   });
 });
 
+describe('Limite de citas por IP para un mismo dia', () => {
+  it('una IP no llena un dia; los intentos fallidos no le gastan cupo', async () => {
+    const agendar = async (fecha: string, inicio = '10:00') =>
+      (await pedir('/citas', conJson('POST', { ...solicitudValida, fecha, inicio }))).status;
+
+    for (let n = 0; n < 10; n++) expect(await agendar('2026-12-24', '23:00')).toBe(409);
+    for (let n = 0; n < 8; n++) expect(await agendar('2026-12-24')).toBe(201);
+    expect(await agendar('2026-12-24')).toBe(429);
+    expect(await agendar('2026-12-26')).toBe(201);
+  });
+});
+
 // Va al final: agota el limite de agendar de la IP de las pruebas.
 describe('Limite de citas por IP', () => {
   it('responde 429 con Retry-After al pasar el limite', async () => {
-    let respuesta = await pedir('/citas', conJson('POST', solicitudValida));
+    // Cada vez otro dia, para llegar al limite por hora y no al de un mismo dia.
+    let dia = 0;
+    const agendarOtroDia = () =>
+      pedir('/citas', conJson('POST', { ...solicitudValida, fecha: `2027-01-${String((dia++ % 28) + 1).padStart(2, '0')}` }));
+
+    let respuesta = await agendarOtroDia();
     while (respuesta.status === 201) {
-      respuesta = await pedir('/citas', conJson('POST', solicitudValida));
+      respuesta = await agendarOtroDia();
     }
 
     expect(respuesta.status).toBe(429);

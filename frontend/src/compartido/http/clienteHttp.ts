@@ -25,7 +25,7 @@ export class ErrorDeApi extends Error {
     return this.estado >= 500
   }
 
-  // Token vencido o ausente: la duena tiene que volver a iniciar sesion.
+  // Sesion vencida o ausente: la duena tiene que volver a iniciar sesion.
   esDeSesion(): boolean {
     return this.estado === 401
   }
@@ -39,13 +39,12 @@ export interface Http {
   eliminar(ruta: string): Promise<void>
 }
 
-// Quien sabe el token de la sesion actual. Las rutas publicas funcionan igual
-// cuando devuelve null.
-export type ProveedorDeToken = () => string | null
-
-// Se llama cuando el servidor rechaza un token que SI se envio (vencido,
-// revocado o falso), para que la app cierre la sesion local y vuelva al login.
+// Se llama cuando el servidor responde 401. La sesion viaja en una cookie que
+// JavaScript no ve; quien crea el cliente decide si un 401 es "sesion perdida".
 export type AlPerderLaSesion = () => void
+
+// La API lo exige en las acciones del panel (CSRF): otro sitio no puede mandarlo.
+const ENCABEZADO_PROPIO = 'X-Salon-Peticion'
 
 const SIN_CONTENIDO = 204
 const NO_AUTORIZADO = 401
@@ -57,16 +56,10 @@ interface ErrorDelServidor {
 
 export class ClienteHttp implements Http {
   private readonly urlBase: string
-  private readonly token: ProveedorDeToken
   private readonly alPerderLaSesion: AlPerderLaSesion
 
-  constructor(
-    urlBase: string,
-    token: ProveedorDeToken = () => null,
-    alPerderLaSesion: AlPerderLaSesion = () => {},
-  ) {
+  constructor(urlBase: string, alPerderLaSesion: AlPerderLaSesion = () => {}) {
     this.urlBase = urlBase.replace(/\/$/, '')
-    this.token = token
     this.alPerderLaSesion = alPerderLaSesion
   }
 
@@ -93,11 +86,9 @@ export class ClienteHttp implements Http {
   }
 
   private async pedir<T>(ruta: string, opciones: RequestInit): Promise<T> {
-    const token = this.token()
-    const respuesta = await this.enviar(ruta, conToken(opciones, token))
+    const respuesta = await this.enviar(ruta, conEncabezadoPropio(opciones))
 
-    // Un 401 sin token es un login fallido, no una sesion perdida.
-    if (respuesta.status === NO_AUTORIZADO && token) {
+    if (respuesta.status === NO_AUTORIZADO) {
       this.alPerderLaSesion()
     }
     if (!respuesta.ok) {
@@ -134,10 +125,8 @@ function conCuerpoJson(method: 'POST' | 'PATCH' | 'PUT', cuerpo: unknown): Reque
   }
 }
 
-function conToken(opciones: RequestInit, token: string | null): RequestInit {
-  if (!token) return opciones
-
+function conEncabezadoPropio(opciones: RequestInit): RequestInit {
   const headers = new Headers(opciones.headers)
-  headers.set('Authorization', `Bearer ${token}`)
+  headers.set(ENCABEZADO_PROPIO, '1')
   return { ...opciones, headers }
 }

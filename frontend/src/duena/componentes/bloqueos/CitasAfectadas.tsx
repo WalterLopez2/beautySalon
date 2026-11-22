@@ -17,7 +17,7 @@ export function CitasAfectadas({ citas, onEntendido }: Props) {
       <ul>
         {citas.map((item) => (
           <li key={item.id}>
-            {item.clienta.nombre} - {item.cita.resumen()}{' '}
+            {item.nombreEscrito} - {item.cita.resumen()}{' '}
             <a href={item.clienta.enlaceDeWhatsApp()} target="_blank" rel="noreferrer">
               Avisarle
             </a>

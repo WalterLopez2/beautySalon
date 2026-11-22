@@ -1,7 +1,7 @@
 // Composicion de dependencias del panel de la duena. Es el unico archivo de
 // `duena/` que decide implementaciones concretas; el resto recibe interfaces.
-// El cliente HTTP lee el token del almacen en cada peticion, asi que al iniciar
-// o cerrar sesion no hay que reconstruir nada.
+// La sesion viaja sola en una cookie, asi que al iniciar o cerrar sesion no
+// hay que reconstruir nada.
 
 import { URL_DE_LA_API } from '../compartido/configuracion.ts'
 import { ClienteHttp } from '../compartido/http/clienteHttp.ts'
@@ -19,16 +19,13 @@ import type { RepositorioClientas } from './features/clientas/repositorioClienta
 import { GuardarHorario } from './features/horario/GuardarHorario.ts'
 import { RepositorioHorarioHttp } from './features/horario/repositorioHorario.ts'
 import type { RepositorioHorario } from './features/horario/repositorioHorario.ts'
-import { AlmacenDeSesionLocal } from './features/sesion/almacenDeSesion.ts'
 import { AvisosDeSesion } from './features/sesion/avisosDeSesion.ts'
 import { CerrarSesion } from './features/sesion/CerrarSesion.ts'
 import { RecuperarSesion } from './features/sesion/RecuperarSesion.ts'
-import type { AlmacenDeSesion } from './features/sesion/almacenDeSesion.ts'
 import { IniciarSesion } from './features/sesion/IniciarSesion.ts'
 import { RepositorioSesionHttp } from './features/sesion/repositorioSesion.ts'
 
 export interface ContenedorDuena {
-  almacenDeSesion: AlmacenDeSesion
   avisosDeSesion: AvisosDeSesion
   iniciarSesion: IniciarSesion
   recuperarSesion: RecuperarSesion
@@ -45,29 +42,21 @@ export interface ContenedorDuena {
 }
 
 function crearContenedor(urlBase: string): ContenedorDuena {
-  const almacenDeSesion = new AlmacenDeSesionLocal()
   const avisosDeSesion = new AvisosDeSesion()
-  const http = new ClienteHttp(
-    urlBase,
-    () => almacenDeSesion.leer()?.token ?? null,
-    // El servidor rechazo el token: se olvida y la app vuelve al login.
-    () => {
-      almacenDeSesion.borrar()
-      avisosDeSesion.avisarQueSePerdio()
-    },
-  )
-  const repositorioSesion = new RepositorioSesionHttp(http)
+  // Al entrar, recuperar o salir, un 401 es una respuesta normal ("no hay
+  // sesion"). En el resto del panel significa que se perdio: se vuelve al login.
+  const repositorioSesion = new RepositorioSesionHttp(new ClienteHttp(urlBase))
+  const http = new ClienteHttp(urlBase, () => avisosDeSesion.avisarQueSePerdio())
   const repositorioAgenda = new RepositorioAgendaHttp(http)
   const repositorioCatalogo = new RepositorioCatalogoHttp(http)
   const repositorioHorario = new RepositorioHorarioHttp(http)
   const repositorioBloqueos = new RepositorioBloqueosHttp(http)
 
   return {
-    almacenDeSesion,
     avisosDeSesion,
-    iniciarSesion: new IniciarSesion(repositorioSesion, almacenDeSesion),
-    recuperarSesion: new RecuperarSesion(repositorioSesion, almacenDeSesion),
-    cerrarSesion: new CerrarSesion(repositorioSesion, almacenDeSesion),
+    iniciarSesion: new IniciarSesion(repositorioSesion),
+    recuperarSesion: new RecuperarSesion(repositorioSesion),
+    cerrarSesion: new CerrarSesion(repositorioSesion),
     repositorioAgenda,
     cambiarEstadoDeCita: new CambiarEstadoDeCita(repositorioAgenda),
     repositorioClientas: new RepositorioClientasHttp(http),

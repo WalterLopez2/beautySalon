@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Consultor } from '../../src/compartido/baseDeDatos/baseDeDatos';
-import { RepositorioCitas } from '../../src/compartido/citas/repositorioCitas';
+import { RepositorioCitas, type NuevaCita } from '../../src/compartido/citas/repositorioCitas';
+import { Conflicto } from '../../src/compartido/errores';
 
 // Agendar no comprueba de quien es el telefono, asi que un codigo solo puede
 // dar acceso a la cita con la que se entrego, nunca a las demas de ese telefono.
@@ -25,5 +26,23 @@ describe('RepositorioCitas: consulta publica con telefono y codigo', () => {
 
     expect(valores).toEqual(['99990000', 'hash-del-codigo']);
     expect(condicion).not.toContain('99990000');
+  });
+});
+
+describe('RepositorioCitas: la base rechaza un cruce', () => {
+  function repositorioQueFallaCon(code: string) {
+    const query = vi.fn(async () => {
+      throw Object.assign(new Error('rechazado por PostgreSQL'), { code });
+    });
+    return new RepositorioCitas({ query } as unknown as Consultor);
+  }
+  const nueva = { fecha: '2026-12-01', inicioMin: 600, duracionMin: 60 } as NuevaCita;
+
+  it('lo explica como hora ocupada (409), no como error del servidor', async () => {
+    await expect(repositorioQueFallaCon('23P01').crear(nueva)).rejects.toBeInstanceOf(Conflicto);
+  });
+
+  it('otros errores de la base no se disfrazan', async () => {
+    await expect(repositorioQueFallaCon('42P01').crear(nueva)).rejects.toThrow('rechazado por PostgreSQL');
   });
 });

@@ -4,20 +4,25 @@ import type { CitaDTO, EstadoCita } from '../tipos/api.ts'
 import { formatearFecha, formatearLempiras } from '../utils/formato.ts'
 import { Franja } from './Franja.ts'
 
+// Igual que en el backend, que es quien las vence.
+export const HORAS_PARA_CONFIRMAR = 24
+
 const ETIQUETAS_DE_ESTADO: Record<EstadoCita, string> = {
   pendiente: 'Pendiente de confirmacion',
   confirmada: 'Confirmada',
   atendida: 'Atendida',
   cancelada: 'Cancelada',
+  vencida: 'Vencida: no se confirmo a tiempo',
 }
 
 // Ciclo de vida de una cita. Es la unica fuente de verdad sobre que cambios de
-// estado se permiten; "atendida" y "cancelada" son finales.
+// estado se permiten; "atendida", "cancelada" y "vencida" son finales.
 const TRANSICIONES_PERMITIDAS: Record<EstadoCita, readonly EstadoCita[]> = {
   pendiente: ['confirmada', 'cancelada'],
   confirmada: ['atendida', 'cancelada'],
   atendida: [],
   cancelada: [],
+  vencida: [],
 }
 
 export class Cita {
@@ -65,6 +70,10 @@ export class Cita {
 
   estaCancelada(): boolean {
     return this.estado === 'cancelada'
+  }
+
+  ocupaSuHorario(): boolean {
+    return this.estado !== 'cancelada' && this.estado !== 'vencida'
   }
 
   fueAtendida(): boolean {

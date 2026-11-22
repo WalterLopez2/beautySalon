@@ -29,26 +29,6 @@ export class RepositorioHorario {
     this.baseDeDatos = baseDeDatos;
   }
 
-  async crearTablas(): Promise<void> {
-    // Una sola fila: la llave siempre es TRUE.
-    await this.baseDeDatos.query(`
-      CREATE TABLE IF NOT EXISTS configuracion_salon (
-        id BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK (id),
-        zona_horaria VARCHAR(64) NOT NULL,
-        intervalo_min INTEGER NOT NULL CHECK (intervalo_min BETWEEN 5 AND 240),
-        max_citas_pendientes INTEGER NOT NULL CHECK (max_citas_pendientes BETWEEN 1 AND 50)
-      )
-    `);
-    await this.baseDeDatos.query(`
-      CREATE TABLE IF NOT EXISTS horario_semanal (
-        dia_semana SMALLINT PRIMARY KEY CHECK (dia_semana BETWEEN 1 AND 7),
-        apertura_min INTEGER NOT NULL CHECK (apertura_min BETWEEN 0 AND 1439),
-        cierre_min INTEGER NOT NULL CHECK (cierre_min BETWEEN 1 AND 1440),
-        CHECK (apertura_min < cierre_min)
-      )
-    `);
-  }
-
   async obtenerConfiguracion(): Promise<ConfiguracionDelSalon | null> {
     const resultado = await this.baseDeDatos.query<FilaConfiguracion>(
       'SELECT zona_horaria, intervalo_min, max_citas_pendientes FROM configuracion_salon',

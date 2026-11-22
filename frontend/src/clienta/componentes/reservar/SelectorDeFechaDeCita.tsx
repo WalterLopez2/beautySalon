@@ -1,6 +1,7 @@
-// Campo para elegir el dia de la cita. No deja elegir fechas pasadas y repite
+// Campo para elegir el dia de la cita, entre hoy y el plazo maximo. Repite
 // la fecha en palabras ("martes, 18 de noviembre") para evitar confusiones.
 
+import { ultimaFechaParaAgendar } from '../../../compartido/dominio/plazoDeReserva.ts'
 import { esFechaValida, hoy } from '../../../compartido/utils/fecha.ts'
 import { formatearFecha } from '../../../compartido/utils/formato.ts'
 
@@ -17,6 +18,7 @@ export function SelectorDeFechaDeCita({ fecha, alElegir }: Props) {
         type="date"
         className="campo__control"
         min={hoy()}
+        max={ultimaFechaParaAgendar()}
         value={fecha}
         onChange={(evento) => alElegir(evento.target.value)}
       />

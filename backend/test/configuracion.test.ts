@@ -98,3 +98,12 @@ describe('Direccion donde escucha la API', () => {
     expect(() => direccionCon(direccion)).toThrow('DIRECCION_DE_ESCUCHA debe ser una direccion IP');
   });
 });
+
+describe('Tiempos maximos con la base de datos', () => {
+  it('no espera para siempre ni al conectar ni al consultar', () => {
+    const { connectionTimeoutMillis, query_timeout } = leerConfiguracionDeBaseDeDatos(ENTORNO_MINIMO);
+
+    expect(connectionTimeoutMillis).toBe(5_000);
+    expect(query_timeout).toBe(10_000);
+  });
+});

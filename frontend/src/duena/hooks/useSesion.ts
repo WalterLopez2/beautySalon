@@ -1,10 +1,10 @@
 // Estado de la sesion de la duena para toda la vista del panel.
 //
-//   verificando -> al abrir, se confirma con el servidor el token guardado
+//   verificando -> al abrir, se le pregunta al servidor si la cookie sirve
 //   sin-sesion  -> se muestra el login
 //   con-sesion  -> se muestra el panel
 //
-// Si el servidor rechaza el token en cualquier momento (vencio, se cerro en
+// Si el servidor rechaza la sesion en cualquier momento (vencio, se cerro en
 // otro dispositivo, cambio la contrasena), vuelve solo a "sin-sesion".
 
 import { useEffect, useState } from 'react'
@@ -24,7 +24,7 @@ type DependenciasDeSesion = Pick<
 interface SesionEnPantalla {
   estado: EstadoDeSesion
   sesion: Sesion | null
-  // Mensaje para mostrar en el login (por ejemplo, "tu sesion vencio").
+  // Mensaje para el login ("tu sesion vencio") o el panel ("no se pudo salir").
   aviso: string | null
   credenciales: Credenciales
   enviando: boolean
@@ -34,6 +34,8 @@ interface SesionEnPantalla {
   cerrar: () => Promise<void>
 }
 
+const NO_SE_PUDO_SALIR =
+  'No se pudo cerrar la sesion: sigue abierta en este navegador. Revisa tu internet e intenta de nuevo.'
 const SESION_PERDIDA = 'Tu sesion vencio o se cerro. Inicia sesion de nuevo.'
 
 export function useSesion(dependencias: DependenciasDeSesion = contenedorDuena): SesionEnPantalla {
@@ -57,7 +59,7 @@ export function useSesion(dependencias: DependenciasDeSesion = contenedorDuena):
     setAviso(mensaje)
   }
 
-  // Al abrir el panel: recuperar la sesion guardada si el servidor la acepta.
+  // Al abrir el panel: recuperar la sesion si el servidor la acepta.
   useEffect(() => {
     let vigente = true
     recuperarSesion
@@ -96,14 +98,14 @@ export function useSesion(dependencias: DependenciasDeSesion = contenedorDuena):
     }
   }
 
-  // Aunque el servidor no responda, la duena sale del panel igual.
+  // Solo se sale si el servidor borro la cookie; si no, se avisa.
   async function cerrar(): Promise<void> {
+    setAviso(null)
     try {
       await cerrarSesion.ejecutar()
-    } catch {
-      // CerrarSesion ya borro la sesion local; no hay nada mas que hacer.
-    } finally {
       salir(null)
+    } catch {
+      setAviso(NO_SE_PUDO_SALIR)
     }
   }
 

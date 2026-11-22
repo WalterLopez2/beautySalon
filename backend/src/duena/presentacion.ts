@@ -15,9 +15,14 @@ export function aClienta(clienta: Pick<Cliente, 'id' | 'nombre' | 'telefono' | '
 }
 
 export function aCitaDelPanel(cita: CitaRegistrada) {
-  return { ...aCitaDTO(cita), clienta: aClienta(cita.clienta) };
+  return { ...aCitaDelHistorial(cita), clienta: aClienta(cita.clienta) };
+}
+
+// El nombre escrito solo va al panel: la vista publica no lo recibe.
+function aCitaDelHistorial(cita: CitaRegistrada) {
+  return { ...aCitaDTO(cita), nombreEscrito: cita.nombreEscrito };
 }
 
 export function aHistorialDeClienta(clienta: Cliente, citas: CitaRegistrada[]) {
-  return { clienta: aClienta(clienta), citas: citas.map(aCitaDTO) };
+  return { clienta: aClienta(clienta), citas: citas.map(aCitaDelHistorial) };
 }

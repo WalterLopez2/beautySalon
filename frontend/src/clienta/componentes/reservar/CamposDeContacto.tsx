@@ -18,6 +18,7 @@ export function CamposDeContacto({ contacto, alCambiar }: Props) {
         <input
           className="campo__control"
           autoComplete="name"
+          maxLength={120}
           value={contacto.nombre}
           onChange={(evento) => alCambiar({ nombre: evento.target.value })}
         />
@@ -30,10 +31,11 @@ export function CamposDeContacto({ contacto, alCambiar }: Props) {
           inputMode="tel"
           className="campo__control"
           autoComplete="tel"
+          maxLength={30}
           value={contacto.telefono}
           onChange={(evento) => alCambiar({ telefono: evento.target.value })}
         />
-        <span className="campo__ayuda">Lo usaras con tu codigo para ver tu cita.</span>
+        <span className="campo__ayuda">8 digitos de Honduras. Lo usaras con tu codigo para ver tu cita.</span>
       </label>
 
       <label className="campo">
@@ -42,6 +44,7 @@ export function CamposDeContacto({ contacto, alCambiar }: Props) {
           type="email"
           className="campo__control"
           autoComplete="email"
+          maxLength={254}
           value={contacto.correo}
           onChange={(evento) => alCambiar({ correo: evento.target.value })}
         />

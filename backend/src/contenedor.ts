@@ -8,6 +8,7 @@ import { ConsultarAgendaDelDia } from './clienta/ConsultarAgendaDelDia';
 import type { BaseDeDatos } from './compartido/baseDeDatos/baseDeDatos';
 import { RepositorioBloqueos } from './compartido/bloqueos/repositorioBloqueos';
 import { RepositorioCitas } from './compartido/citas/repositorioCitas';
+import { VencerCitasPendientes } from './compartido/citas/VencerCitasPendientes';
 import { RepositorioClientes } from './compartido/clientes/repositorioClientes';
 import { RepositorioHorario } from './compartido/horario/repositorioHorario';
 import { LimitadorPorIp } from './compartido/seguridad/LimitadorPorIp';
@@ -21,6 +22,13 @@ import { CerrarSesion, VerificarSesion } from './duena/autenticacion/VerificarSe
 import { CambiarEstadoDeCita } from './duena/CambiarEstadoDeCita';
 import { CrearBloqueo } from './duena/configuracion/CrearBloqueo';
 import { GuardarHorario } from './duena/configuracion/GuardarHorario';
+
+export function crearVencimientoDeCitas(baseDeDatos: BaseDeDatos): VencerCitasPendientes {
+  return new VencerCitasPendientes({
+    citas: new RepositorioCitas(baseDeDatos),
+    horario: new RepositorioHorario(baseDeDatos),
+  });
+}
 
 export function crearDependencias(baseDeDatos: BaseDeDatos, configuracion: Configuracion): DependenciasDeLaApp {
   const horario = new RepositorioHorario(baseDeDatos);
@@ -56,6 +64,7 @@ export function crearDependencias(baseDeDatos: BaseDeDatos, configuracion: Confi
       agendarCita,
       limites: {
         agendar: new LimitadorPorIp(LIMITES.agendarPorIp),
+        agendarPorFecha: new LimitadorPorIp(LIMITES.agendarPorIpYFecha),
         consultarHistorial: new LimitadorPorIp(LIMITES.consultarHistorialPorIp),
       },
     },

@@ -11,6 +11,7 @@ import { Router } from 'express';
 import type { CitaRegistrada } from '../compartido/citas/repositorioCitas';
 import type { Cliente } from '../compartido/clientes/repositorioClientes';
 import type { EstadoCita } from '../compartido/dominio/citas';
+import { LARGO_MAXIMO } from '../compartido/dominio/limitesDeDatos';
 import { NoEncontrado } from '../compartido/errores';
 import {
   leerEstadoCita,
@@ -21,6 +22,8 @@ import {
 } from '../compartido/http/entrada';
 import { sinCache } from '../compartido/seguridad/cabecerasDeSeguridad';
 import type { Credenciales, SesionIniciada } from './autenticacion/IniciarSesion';
+import type { CookieDeSesion } from './autenticacion/cookieDeSesion';
+import { protegerContraCsrf } from './autenticacion/protegerContraCsrf';
 import { requiereSesion, sesionActual, type VerificadorDeSesion } from './autenticacion/requiereSesion';
 import type { SesionDeDuena } from './autenticacion/tokens';
 import { crearRutasDeConfiguracion, type DependenciasDeConfiguracion } from './configuracion/rutas';
@@ -48,28 +51,36 @@ export interface DependenciasDeLaDuena {
   bloqueos: DependenciasDeBloqueos;
 }
 
-export function crearRutasDeLaDuena(dependencias: DependenciasDeLaDuena): Router {
+export function crearRutasDeLaDuena(dependencias: DependenciasDeLaDuena, cookie: CookieDeSesion): Router {
   const { iniciarSesion, verificarSesion } = dependencias;
   const rutas = Router();
 
-  rutas.post('/auth/login', sinCache, async (peticion, respuesta) => {
+  rutas.post('/auth/login', sinCache, protegerContraCsrf, async (peticion, respuesta) => {
     const credenciales = leerCredenciales(peticion.body);
-    respuesta.json(await iniciarSesion.ejecutar(credenciales, peticion.ip ?? 'desconocida'));
+    const { token, ...sesion } = await iniciarSesion.ejecutar(credenciales, peticion.ip ?? 'desconocida');
+    cookie.guardar(respuesta, token, sesion.expiraEn);
+    respuesta.json(sesion); // sin el token: solo va en la cookie
   });
 
-  rutas.use('/panel', sinCache, requiereSesion(verificarSesion), crearRutasDelPanel(dependencias));
+  rutas.use(
+    '/panel',
+    sinCache,
+    requiereSesion(verificarSesion, cookie),
+    protegerContraCsrf,
+    crearRutasDelPanel(dependencias, cookie),
+  );
 
   return rutas;
 }
 
 // Solo se monta detras de `requiereSesion`: aqui todas las rutas ya tienen sesion.
-function crearRutasDelPanel(dependencias: DependenciasDeLaDuena): Router {
+function crearRutasDelPanel(dependencias: DependenciasDeLaDuena, cookie: CookieDeSesion): Router {
   const { cerrarSesion, cambiarEstadoDeCita, citas, clientes } = dependencias;
   const panel = Router();
 
   // ----- Sesion -----
 
-  // Al abrir el panel, el frontend confirma que su token sigue sirviendo.
+  // Al abrir el panel, el frontend pregunta si su cookie sigue sirviendo.
   panel.get('/sesion', (_peticion, respuesta) => {
     const { nombre, expiraEn } = sesionActual(respuesta);
     respuesta.json({ nombre, expiraEn: new Date(expiraEn).toISOString() });
@@ -77,6 +88,7 @@ function crearRutasDelPanel(dependencias: DependenciasDeLaDuena): Router {
 
   panel.post('/sesion/cerrar', async (_peticion, respuesta) => {
     await cerrarSesion.ejecutar(sesionActual(respuesta));
+    cookie.borrar(respuesta);
     respuesta.status(204).end();
   });
 
@@ -118,7 +130,7 @@ function crearRutasDelPanel(dependencias: DependenciasDeLaDuena): Router {
 function leerCredenciales(cuerpo: unknown): Credenciales {
   const datos = leerObjeto(cuerpo, 'inicio de sesion');
   return {
-    usuario: leerTexto(datos.usuario, 'usuario'),
+    usuario: leerTexto(datos.usuario, 'usuario', LARGO_MAXIMO.usuario),
     // La contrasena no se recorta: los espacios pueden ser parte de ella.
     contrasena: typeof datos.contrasena === 'string' ? datos.contrasena : '',
   };

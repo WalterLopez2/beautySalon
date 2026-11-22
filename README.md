@@ -19,18 +19,19 @@ Una aplicación web con dos vistas:
 
 **Para la clienta**
 - Catálogo de servicios con precios y duración
-- Agenda en línea que solo ofrece horas realmente libres
+- Agenda en línea que solo ofrece horas realmente libres, hasta con 60 días de anticipación
 - "Mis citas" con teléfono + código de consulta (cada cita tiene su propio código)
 
 **Para la dueña**
 - Agenda del día: confirmar, cancelar y marcar citas como atendidas
-- Estados de cita: pendiente → confirmada → atendida (o cancelada)
+- Estados de cita: pendiente → confirmada → atendida (o cancelada). Una pendiente que no se confirma en 24 horas queda vencida y libera su hora
+- Lista de solicitudes por confirmar de todos los días, con aviso de teléfono sin verificar
 - Catálogo de servicios: crear, editar y pausar
 - Horario semanal, intervalo entre turnos, zona horaria y máximo de citas pendientes por clienta
 - Días libres y horas bloqueadas, con aviso de las citas afectadas
 - Historial por clienta y resumen de ingresos por día y por semana
 
-**Nada está fijo en el código:** horarios, servicios, precios y reglas los configura la dueña desde el panel. Mientras no configure su horario, el salón aparece cerrado.
+**El salón lo configura la dueña:** horarios, servicios, precios y máximo de citas salen del panel. Solo las protecciones contra abuso (plazos y límites de intentos) están fijas en el código. Mientras no configure su horario, el salón aparece cerrado.
 
 ## Estado actual
 
@@ -43,13 +44,14 @@ Una aplicación web con dos vistas:
 
 ## Seguridad
 
-- Contraseñas cifradas con scrypt y sesiones con tokens firmados (HMAC).
+- Contraseñas cifradas con scrypt y sesiones con tokens firmados (HMAC), guardados en una cookie `HttpOnly`, `SameSite=Strict`, solo para `/api/panel`. Las acciones del panel exigen además un encabezado propio contra CSRF.
 - Cerrar sesión o cambiar la contraseña invalida todos los tokens anteriores.
 - Límite de intentos de login y de citas por IP (responde 429), también con peticiones simultáneas.
 - Con `SOLO_HTTPS=true`, la API rechaza lo que llegue por HTTP plano, menos `/api/salud`.
 - Ver una cita requiere teléfono **y** código, y cada código muestra solo su cita; en la base solo se guarda el hash del código.
-- Dos clientas no pueden tomar la misma hora: agendar es una transacción con el día bloqueado.
-- Encabezados de seguridad en todas las respuestas y sin caché en el panel.
+- Dos clientas no pueden tomar la misma hora: agendar es una transacción con el día bloqueado y, además, la base rechaza citas que se crucen.
+- Un teléfono es una sola clienta (8 dígitos de Honduras, con o sin +504) y su máximo de citas se respeta también con peticiones simultáneas.
+- Encabezados de seguridad en todas las respuestas y sin caché en el panel ni en las citas.
 - La página compilada trae una `Content-Security-Policy` estricta: solo carga scripts, estilos e imágenes del propio sitio y solo habla con su API. Dificulta que un script inyectado se ejecute o mande datos a otro servidor, pero es una capa más, no una garantía. Se arma en `frontend/seguridad/politicaDeContenido.ts`.
 
 ## Tecnologías
@@ -73,6 +75,8 @@ beautySalon/
 │       ├── duena/         # Panel de la dueña (/panel)
 │       └── compartido/    # Dominio, HTTP, tipos y utilidades comunes
 ├── backend/               # API en Node.js
+│   ├── administracion/    # SQL que corre quien administra PostgreSQL, una vez
+│   ├── migraciones/       # Cambios de la base, numerados
 │   ├── src/
 │   │   ├── clienta/       # Rutas públicas y casos de uso de la clienta
 │   │   ├── duena/         # Login, panel y configuración del salón
@@ -104,7 +108,7 @@ El archivo `.env` no se sube al repositorio. Nunca pongas datos reales en `backe
 
 Si alguna vez se sube un secreto real por error, hay que cambiarlo (contraseña de la base de datos, `TOKEN_SECRETO`): borrarlo del archivo no lo saca del historial de git.
 
-### 2. Crear las tablas
+### 2. Crear o actualizar las tablas
 
 Con la base de datos y el usuario ya creados en PostgreSQL:
 
@@ -112,7 +116,16 @@ Con la base de datos y el usuario ya creados en PostgreSQL:
 pnpm db:preparar
 ```
 
-Crea las tablas que falten y no carga datos. Se puede correr las veces que haga falta.
+Aplica las migraciones que falten y no carga datos. Se puede correr las veces que haga falta, y **hay que correrlo cada vez que bajes cambios con archivos nuevos en `backend/migraciones/`**.
+
+Una migración es un archivo SQL con un cambio de la base. Para crear una:
+
+1. Creá `backend/migraciones/NNN_que_cambia.sql` con el número siguiente.
+2. Corré `pnpm db:preparar`.
+
+Nunca edites una que ya se aplicó: el comando se detiene y lo avisa. Si algo quedó mal, se corrige con una migración nueva.
+
+Además, una sola vez y con el usuario `postgres`, conviene correr `backend/administracion/asegurar-postgres.sql` (el comando está dentro del archivo): cierra PostgreSQL a la red y le pone tiempos máximos.
 
 ### 3. Crear la cuenta de la dueña
 
@@ -168,7 +181,8 @@ En el hosting del frontend:
 
 - Redirigir HTTP a HTTPS, para que nadie llegue a escribir datos en una página sin cifrar.
 - Servir `index.html` en `/panel` (la app decide qué vista mostrar).
-- La `Content-Security-Policy` ya viene dentro de `index.html` al compilar (`pnpm build`); si la API está en otro dominio, definí `VITE_API_URL` antes de compilar para que quede permitida.
+- Servir la API en el **mismo dominio**, bajo `/api` (con un proxy o rewrite). La sesión es una cookie y la API no habilita CORS: desde otro dominio no funciona.
+- La `Content-Security-Policy` ya viene dentro de `index.html` al compilar (`pnpm build`).
 - Enviar el encabezado `Content-Security-Policy: frame-ancestors 'none'` (o `X-Frame-Options: DENY`), para que nadie meta la página dentro de un `<iframe>`. Esa regla no se puede poner en `index.html`: tiene que venir del hosting.
 
 ## Autor

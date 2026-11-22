@@ -5,7 +5,9 @@ import { crearApp } from './app';
 import { BaseDeDatosPostgres } from './compartido/baseDeDatos/baseDeDatos';
 import { cargarArchivoEnv } from './compartido/entorno';
 import { leerConfiguracion } from './configuracion';
-import { crearDependencias } from './contenedor';
+import { crearDependencias, crearVencimientoDeCitas } from './contenedor';
+
+const CADA_MINUTO = 60 * 1000;
 
 cargarArchivoEnv();
 const configuracion = leerConfiguracion(process.env, {
@@ -17,6 +19,15 @@ const app = crearApp(crearDependencias(baseDeDatos, configuracion), {
   soloHttps: configuracion.soloHttps,
 });
 
+const vencimiento = crearVencimientoDeCitas(baseDeDatos);
+
+// Si falla (por ejemplo, la base esta apagada) se vuelve a intentar al minuto.
+function vencerPendientes(): void {
+  vencimiento.ejecutar().catch((error: Error) => {
+    console.error(`No se pudieron vencer las citas pendientes: ${error.message}`);
+  });
+}
+
 const { direccion, puerto } = configuracion;
 const servidor = app.listen(puerto, direccion, (error) => {
   // Express 5 llama aqui tambien cuando NO pudo abrir el puerto.
@@ -26,6 +37,8 @@ const servidor = app.listen(puerto, direccion, (error) => {
     return;
   }
   console.log(`API del salon escuchando en ${direccion}, puerto ${puerto} (rutas en /api)`);
+  vencerPendientes();
+  setInterval(vencerPendientes, CADA_MINUTO).unref(); // unref: no impide apagar
 });
 
 // Al detener el servidor (Ctrl+C o el hosting), termina las peticiones en

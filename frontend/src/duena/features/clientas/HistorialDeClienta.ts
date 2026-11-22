@@ -3,19 +3,29 @@
 
 import { Cita } from '../../../compartido/dominio/Cita.ts'
 import type { HistorialDeClientaDTO } from '../../../compartido/tipos/api.ts'
+import { normalizarTexto } from '../../../compartido/utils/texto.ts'
 import { Clienta } from './Clienta.ts'
 
 export class HistorialDeClienta {
   readonly clienta: Clienta
   private readonly citas: readonly Cita[]
+  private readonly nombresEscritos: ReadonlyMap<number, string> // por id de cita
 
-  constructor(clienta: Clienta, citas: readonly Cita[]) {
+  constructor(clienta: Clienta, citas: readonly Cita[], nombresEscritos: ReadonlyMap<number, string>) {
     this.clienta = clienta
     this.citas = citas
+    this.nombresEscritos = nombresEscritos
   }
 
   static desdeDTO(dto: HistorialDeClientaDTO): HistorialDeClienta {
-    return new HistorialDeClienta(Clienta.desdeDTO(dto.clienta), dto.citas.map(Cita.desdeDTO))
+    const nombres = new Map(dto.citas.map((cita) => [cita.id, cita.nombreEscrito]))
+    return new HistorialDeClienta(Clienta.desdeDTO(dto.clienta), dto.citas.map(Cita.desdeDTO), nombres)
+  }
+
+  // Si esa cita se pidio con otro nombre, cual; null si es el de la ficha.
+  otroNombreEn(cita: Cita): string | null {
+    const escrito = this.nombresEscritos.get(cita.id) ?? ''
+    return normalizarTexto(escrito) === normalizarTexto(this.clienta.nombre) ? null : escrito
   }
 
   // La mas reciente primero, que es lo que la duena busca al abrir el historial.

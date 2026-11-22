@@ -1,5 +1,5 @@
 // Codigo privado que recibe la clienta al agendar. Con su telefono + este
-// codigo puede ver sus citas; con solo el telefono, no.
+// codigo puede ver esa cita (solo esa); con solo el telefono, no.
 //
 // En la base se guarda solo el hash (SHA-256): si alguien llegara a leer la
 // tabla, no podria usar los codigos.

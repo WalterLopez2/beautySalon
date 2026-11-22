@@ -46,6 +46,14 @@ export class LimitadorDeIntentos {
     this.registrar(clave);
   }
 
+  // Deshace el intento mas reciente: se conto por adelantado y resulto no ser
+  // un fallo (login correcto, base de datos caida).
+  devolver(clave: string): void {
+    const restantes = this.recientes(clave).slice(0, -1);
+    if (restantes.length > 0) this.registros.set(clave, restantes);
+    else this.registros.delete(clave);
+  }
+
   // Tras un login correcto, los fallos anteriores ya no cuentan.
   reiniciar(clave: string): void {
     this.registros.delete(clave);

@@ -22,7 +22,10 @@ export function SeccionMisCitas() {
         <h2 id="titulo-mis-citas" ref={titulo} tabIndex={-1} className="seccion__titulo">
           Mis citas
         </h2>
-        <p className="seccion__introduccion">Escribe tu telefono y el codigo que recibiste al agendar.</p>
+        <p className="seccion__introduccion">
+          Escribe tu telefono y el codigo que recibiste al agendar. Cada codigo muestra solo su
+          cita: si tienes varias, consulta cada una con su codigo.
+        </p>
 
         {misCitas.citas.length > 0 ? (
           <ListaDeCitas citas={misCitas.citas} alOcultar={ocultar} />

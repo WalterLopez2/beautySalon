@@ -19,14 +19,27 @@ const LONGITUD_MINIMA_DEL_SECRETO = 32;
 const MILISEGUNDOS_POR_HORA = 60 * 60 * 1000;
 
 export function leerConfiguracion(entorno: Entorno = process.env): Configuracion {
+  const proxiesDeConfianza = leerEnteroNoNegativo(entorno, 'PROXIES_DE_CONFIANZA', 0);
+
   return {
     puerto: leerNumero(entorno, 'PORT', 3000),
     baseDeDatos: leerConfiguracionDeBaseDeDatos(entorno),
     secretoDeTokens: leerSecretoDeTokens(entorno),
     duracionDeSesionMs: leerNumero(entorno, 'DURACION_SESION_HORAS', 12) * MILISEGUNDOS_POR_HORA,
-    proxiesDeConfianza: leerEnteroNoNegativo(entorno, 'PROXIES_DE_CONFIANZA', 0),
-    soloHttps: entorno.SOLO_HTTPS === 'true',
+    proxiesDeConfianza,
+    soloHttps: leerSoloHttps(entorno, proxiesDeConfianza),
   };
+}
+
+// Node escucha en HTTP y el HTTPS lo pone el proxy del hosting. Sin un proxy
+// de confianza ninguna peticion contaria como HTTPS y se rechazarian todas:
+// mejor no arrancar y decir por que.
+function leerSoloHttps(entorno: Entorno, proxiesDeConfianza: number): boolean {
+  const soloHttps = leerBooleano(entorno, 'SOLO_HTTPS', false);
+  if (soloHttps && proxiesDeConfianza === 0) {
+    throw new Error('SOLO_HTTPS=true necesita PROXIES_DE_CONFIANZA de 1 o mas: el HTTPS lo pone el proxy del hosting.');
+  }
+  return soloHttps;
 }
 
 // Los scripts de base de datos solo necesitan esta parte.

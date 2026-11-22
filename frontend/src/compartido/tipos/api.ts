@@ -41,7 +41,7 @@ export interface CitaDTO {
 }
 
 // Respuesta al agendar: el codigo de consulta llega UNA sola vez. La clienta
-// lo necesita (junto con su telefono) para ver sus citas despues.
+// lo necesita (junto con su telefono) para ver esa cita despues.
 export interface CitaAgendadaDTO extends CitaDTO {
   codigoDeConsulta: string
 }

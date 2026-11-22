@@ -5,6 +5,9 @@
 //   nadie puede averiguar que usuarios existen por el mensaje ni por el tiempo.
 // - Tras varios fallos se bloquea un rato (por usuario+IP y por IP), para que
 //   no se puedan probar miles de contrasenas.
+// - El intento se cuenta ANTES de revisar la contrasena y se devuelve si no
+//   fue un fallo. Si se contara despues, cientos de pedidos simultaneos
+//   pasarian el limite mientras scrypt todavia calcula el primero.
 
 import { NoAutorizado } from '../../compartido/errores';
 import type { LimitadorDeIntentos } from '../../compartido/seguridad/LimitadorDeIntentos';
@@ -44,24 +47,46 @@ export class IniciarSesion {
 
   // `ip` identifica de donde viene el intento, para los limites.
   async ejecutar({ usuario, contrasena }: Credenciales, ip: string): Promise<SesionIniciada> {
-    const { usuarias, tokens, limites } = this.dependencias;
+    const { tokens, limites } = this.dependencias;
     const claveDeUsuario = `${usuario.trim().toLowerCase()}|${ip}`;
-    limites.porIp.exigirDisponible(ip);
-    limites.porUsuario.exigirDisponible(claveDeUsuario);
+    this.reservarIntento(claveDeUsuario, ip);
 
-    const usuaria = await usuarias.buscarPorUsuario(usuario);
-    const hash = usuaria?.hashContrasena ?? (await this.obtenerHashDeRelleno());
-    const contrasenaCorrecta = await verificarContrasena(contrasena, hash);
-
-    if (!usuaria || !contrasenaCorrecta) {
-      limites.porIp.registrar(ip);
-      limites.porUsuario.registrar(claveDeUsuario);
+    const usuaria = await this.autenticar({ usuario, contrasena }).catch((error: unknown) => {
+      this.devolverIntento(claveDeUsuario, ip); // fallo el sistema, no la duena
+      throw error;
+    });
+    if (!usuaria) {
       throw new NoAutorizado(CREDENCIALES_INCORRECTAS);
     }
 
+    limites.porIp.devolver(ip);
     limites.porUsuario.reiniciar(claveDeUsuario);
     const { token, expiraEn } = tokens.emitir(usuaria.id, usuaria.nombre, usuaria.versionSesion);
     return { token, nombre: usuaria.nombre, expiraEn: expiraEn.toISOString() };
+  }
+
+  // Sin ningun `await`: entre revisar y contar no se puede colar otro pedido.
+  // Se revisan los dos limites antes de contar en cualquiera de ellos.
+  private reservarIntento(claveDeUsuario: string, ip: string): void {
+    const { porIp, porUsuario } = this.dependencias.limites;
+    porIp.exigirDisponible(ip);
+    porUsuario.exigirDisponible(claveDeUsuario);
+    porIp.registrar(ip);
+    porUsuario.registrar(claveDeUsuario);
+  }
+
+  private devolverIntento(claveDeUsuario: string, ip: string): void {
+    const { porIp, porUsuario } = this.dependencias.limites;
+    porIp.devolver(ip);
+    porUsuario.devolver(claveDeUsuario);
+  }
+
+  // null = el usuario no existe o la contrasena esta mal.
+  private async autenticar({ usuario, contrasena }: Credenciales): Promise<Usuaria | null> {
+    const usuaria = await this.dependencias.usuarias.buscarPorUsuario(usuario);
+    const hash = usuaria?.hashContrasena ?? (await this.obtenerHashDeRelleno());
+    const contrasenaCorrecta = await verificarContrasena(contrasena, hash);
+    return contrasenaCorrecta ? usuaria : null;
   }
 
   // Se calcula una sola vez y solo se usa para gastar el mismo tiempo.

@@ -38,7 +38,7 @@ export function ListaDeCitas({ citas, alOcultar }: Props) {
       </ul>
 
       <button type="button" className="boton boton--secundario" onClick={alOcultar}>
-        Ocultar mis citas
+        Ocultar
       </button>
     </div>
   )

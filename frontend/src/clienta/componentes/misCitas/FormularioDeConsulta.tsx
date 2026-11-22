@@ -54,7 +54,7 @@ export function FormularioDeConsulta({ consulta, consultando, errores, alCambiar
       <ListaDeErrores errores={errores} />
 
       <button type="submit" className="boton" disabled={consultando}>
-        {consultando ? 'Buscando...' : 'Ver mis citas'}
+        {consultando ? 'Buscando...' : 'Ver mi cita'}
       </button>
     </form>
   )

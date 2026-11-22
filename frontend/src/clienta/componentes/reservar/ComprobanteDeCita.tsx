@@ -1,7 +1,7 @@
 // Lo que ve la clienta al terminar de agendar: el detalle de su cita y su
 // codigo de consulta. El servidor entrega el codigo UNA sola vez, asi que se
 // destaca y se pide guardarlo. No se guarda en el navegador a proposito: con
-// telefono + codigo se ven las citas, y en una computadora compartida otra
+// telefono + codigo se ve la cita, y en una computadora compartida otra
 // persona podria leerlo.
 
 import { useEffect, useRef } from 'react'
@@ -46,9 +46,9 @@ export function ComprobanteDeCita({ citaAgendada, alAgendarOtra }: Props) {
       </div>
 
       <p className="comprobante__aviso">
-        Guardalo bien: con tu telefono y este codigo puedes ver tus citas en{' '}
-        <a href={`#${SECCIONES.misCitas}`}>Mis citas</a>. No lo volveremos a mostrar ni lo
-        compartas con nadie.
+        Guardalo bien: con tu telefono y este codigo puedes ver esta cita en{' '}
+        <a href={`#${SECCIONES.misCitas}`}>Mis citas</a>. Cada cita tiene su propio codigo. No lo
+        volveremos a mostrar y no debes compartirlo con nadie.
       </p>
 
       <button type="button" className="boton boton--secundario" onClick={alAgendarOtra}>

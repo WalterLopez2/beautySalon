@@ -134,16 +134,12 @@ export class RepositorioCitas {
     return fila ? aCitaRegistrada(fila) : null;
   }
 
-  // Historial de la clienta, solo si el codigo coincide con alguna de SUS
-  // citas. Con un telefono ajeno o un codigo inventado devuelve [], igual que
-  // si no tuviera citas: no revela si el telefono existe.
+  // Consulta publica: un codigo abre SOLO la cita con la que se entrego. No
+  // puede abrir las demas del telefono, porque al agendar nadie comprueba que
+  // el telefono sea de quien lo escribe. Con datos que no coinciden devuelve
+  // [], igual que si no hubiera citas.
   async listarPorTelefonoYCodigo(telefono: string, codigoHash: string): Promise<CitaRegistrada[]> {
-    return this.listarDonde(
-      `cl.telefono = $1 AND EXISTS (
-         SELECT 1 FROM citas propia WHERE propia.cliente_id = cl.id AND propia.codigo_hash = $2
-       )`,
-      [telefono, codigoHash],
-    );
+    return this.listarDonde('cl.telefono = $1 AND c.codigo_hash = $2', [telefono, codigoHash]);
   }
 
   // Citas que la clienta todavia tiene por delante (para limitar reservas).

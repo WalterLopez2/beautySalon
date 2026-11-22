@@ -5,6 +5,7 @@ import express, { type Express } from 'express';
 import { crearRutasDeLaClienta, type DependenciasDeLaClienta } from './clienta/rutas';
 import { manejadorDeErrores, rutaNoEncontrada } from './compartido/http/manejadorDeErrores';
 import { cabecerasDeSeguridad } from './compartido/seguridad/cabecerasDeSeguridad';
+import { exigirHttps } from './compartido/seguridad/exigirHttps';
 import { crearRutasDeLaDuena, type DependenciasDeLaDuena } from './duena/rutas';
 
 export interface DependenciasDeLaApp {
@@ -17,7 +18,7 @@ export interface OpcionesDeLaApp {
   // proxy todas las peticiones parecen venir de la misma IP y los limites por
   // IP bloquearian a todo el mundo a la vez.
   proxiesDeConfianza?: number;
-  // En produccion (HTTPS) se pide al navegador no volver a usar HTTP.
+  // En produccion: rechaza HTTP plano y le pide al navegador no volver a usarlo.
   soloHttps?: boolean;
 }
 
@@ -33,11 +34,14 @@ export function crearApp(
   app.disable('x-powered-by'); // no anunciar la tecnologia del servidor
   app.set('trust proxy', proxiesDeConfianza);
   app.use(cabecerasDeSeguridad({ soloHttps }));
-  app.use(express.json({ limit: '10kb' })); // ningun pedido legitimo pesa mas
 
+  // El orden importa: la salud va antes de exigir HTTPS (los hostings la
+  // revisan por HTTP interno) y HTTPS se exige antes de leer cualquier cuerpo.
   app.get(`${PREFIJO_DE_LA_API}/salud`, (_peticion, respuesta) => {
     respuesta.json({ estado: 'ok' });
   });
+  if (soloHttps) app.use(exigirHttps);
+  app.use(express.json({ limit: '10kb' })); // ningun pedido legitimo pesa mas
   app.use(PREFIJO_DE_LA_API, crearRutasDeLaClienta(clienta));
   app.use(PREFIJO_DE_LA_API, crearRutasDeLaDuena(duena));
 

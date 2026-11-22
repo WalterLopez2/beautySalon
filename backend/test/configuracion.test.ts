@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { leerConfiguracionDeBaseDeDatos } from '../src/configuracion';
+import { leerConfiguracion, leerConfiguracionDeBaseDeDatos } from '../src/configuracion';
 
 const ENTORNO_MINIMO = { DB_NAME: 'beautysalon', DB_USER: 'salon' };
 
@@ -26,5 +26,27 @@ describe('SSL de la base de datos', () => {
 
   it('no arranca si el valor tiene un error de tipeo', () => {
     expect(() => sslCon('ture')).toThrow('DB_SSL debe ser true o false');
+  });
+});
+
+describe('SOLO_HTTPS', () => {
+  function configuracionCon(variables: Record<string, string>) {
+    return leerConfiguracion({ ...ENTORNO_MINIMO, TOKEN_SECRETO: 's'.repeat(32), ...variables });
+  }
+
+  it('va apagado si no esta definido (tu computadora)', () => {
+    expect(configuracionCon({}).soloHttps).toBe(false);
+  });
+
+  it('acepta true detras de un proxy', () => {
+    expect(configuracionCon({ SOLO_HTTPS: ' TRUE ', PROXIES_DE_CONFIANZA: '1' }).soloHttps).toBe(true);
+  });
+
+  it('no arranca si el valor tiene un error de tipeo', () => {
+    expect(() => configuracionCon({ SOLO_HTTPS: 'ture' })).toThrow('SOLO_HTTPS debe ser true o false');
+  });
+
+  it('no arranca sin proxy de confianza: rechazaria todas las peticiones', () => {
+    expect(() => configuracionCon({ SOLO_HTTPS: 'true' })).toThrow('PROXIES_DE_CONFIANZA');
   });
 });

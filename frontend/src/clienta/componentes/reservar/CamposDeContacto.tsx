@@ -33,7 +33,7 @@ export function CamposDeContacto({ contacto, alCambiar }: Props) {
           value={contacto.telefono}
           onChange={(evento) => alCambiar({ telefono: evento.target.value })}
         />
-        <span className="campo__ayuda">Lo usaras con tu codigo para ver tus citas.</span>
+        <span className="campo__ayuda">Lo usaras con tu codigo para ver tu cita.</span>
       </label>
 
       <label className="campo">

@@ -12,7 +12,7 @@ El salón llevaba todo (citas, clientas, cobros) en Excel y hojas sueltas. No ha
 
 Una aplicación web con dos vistas:
 
-1. **Vista de la clienta (pública)**: ve los servicios y precios, y agenda su cita eligiendo servicio, fecha y una hora disponible. Al agendar recibe un **código de consulta** para ver sus citas después.
+1. **Vista de la clienta (pública)**: ve los servicios y precios, y agenda su cita eligiendo servicio, fecha y una hora disponible. Al agendar recibe un **código de consulta** para ver esa cita después.
 2. **Vista de la dueña (`/panel`, con login)**: administra todo el salón: agenda, clientas, servicios, horario, días libres e ingresos.
 
 ## Funcionalidades
@@ -20,7 +20,7 @@ Una aplicación web con dos vistas:
 **Para la clienta**
 - Catálogo de servicios con precios y duración
 - Agenda en línea que solo ofrece horas realmente libres
-- "Mis citas" con teléfono + código de consulta
+- "Mis citas" con teléfono + código de consulta (cada cita tiene su propio código)
 
 **Para la dueña**
 - Agenda del día: confirmar, cancelar y marcar citas como atendidas
@@ -45,11 +45,12 @@ Una aplicación web con dos vistas:
 
 - Contraseñas cifradas con scrypt y sesiones con tokens firmados (HMAC).
 - Cerrar sesión o cambiar la contraseña invalida todos los tokens anteriores.
-- Límite de intentos de login y de citas por IP (responde 429).
-- El historial de una clienta requiere teléfono **y** código; en la base solo se guarda el hash del código.
+- Límite de intentos de login y de citas por IP (responde 429), también con peticiones simultáneas.
+- Con `SOLO_HTTPS=true`, la API rechaza lo que llegue por HTTP plano, menos `/api/salud`.
+- Ver una cita requiere teléfono **y** código, y cada código muestra solo su cita; en la base solo se guarda el hash del código.
 - Dos clientas no pueden tomar la misma hora: agendar es una transacción con el día bloqueado.
 - Encabezados de seguridad en todas las respuestas y sin caché en el panel.
-- La página compilada trae una `Content-Security-Policy` estricta: solo carga scripts, estilos e imágenes del propio sitio y solo habla con su API. Si entrara un script malicioso, el navegador no lo ejecutaría ni lo dejaría enviar datos a otro servidor. Se arma en `frontend/seguridad/politicaDeContenido.ts`.
+- La página compilada trae una `Content-Security-Policy` estricta: solo carga scripts, estilos e imágenes del propio sitio y solo habla con su API. Dificulta que un script inyectado se ejecute o mande datos a otro servidor, pero es una capa más, no una garantía. Se arma en `frontend/seguridad/politicaDeContenido.ts`.
 
 ## Tecnologías
 
@@ -156,11 +157,13 @@ Las pruebas viven en `backend/test/` y usan dobles en lugar de PostgreSQL, así 
 En el `.env` del servidor:
 
 - `PROXIES_DE_CONFIANZA=1` (o la cantidad de proxies delante de la API), para que los límites por IP funcionen detrás del hosting.
-- `SOLO_HTTPS=true` cuando la API se sirva por HTTPS.
+- `SOLO_HTTPS=true` cuando la API se sirva por HTTPS. Necesita `PROXIES_DE_CONFIANZA` de 1 o más; si no, la API no arranca.
+- El puerto de la API solo debe ser alcanzable a través del proxy: quien llegue directo podría falsificar su IP y el protocolo (`X-Forwarded-*`).
 - `DB_SSL=true` cuando PostgreSQL esté en otro servidor, para que los datos de las clientas viajen cifrados entre la API y la base. Se verifica el certificado del servidor, así que el proveedor debe usar uno válido.
 
 En el hosting del frontend:
 
+- Redirigir HTTP a HTTPS, para que nadie llegue a escribir datos en una página sin cifrar.
 - Servir `index.html` en `/panel` (la app decide qué vista mostrar).
 - La `Content-Security-Policy` ya viene dentro de `index.html` al compilar (`pnpm build`); si la API está en otro dominio, definí `VITE_API_URL` antes de compilar para que quede permitida.
 - Enviar el encabezado `Content-Security-Policy: frame-ancestors 'none'` (o `X-Frame-Options: DENY`), para que nadie meta la página dentro de un `<iframe>`. Esa regla no se puede poner en `index.html`: tiene que venir del hosting.

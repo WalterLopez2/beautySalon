@@ -4,7 +4,7 @@
 // usuario (podrian filtrar detalles internos o de la base de datos).
 
 import type { ErrorRequestHandler, RequestHandler } from 'express';
-import { Conflicto, DatosInvalidos, DemasiadosIntentos, NoAutorizado, NoEncontrado } from '../errores';
+import { Conflicto, DatosInvalidos, DemasiadosIntentos, HttpsRequerido, NoAutorizado, NoEncontrado } from '../errores';
 
 const MENSAJE_GENERICO = 'Ocurrio un error inesperado. Intenta de nuevo en un momento.';
 
@@ -19,6 +19,10 @@ export const manejadorDeErrores: ErrorRequestHandler = (error, _peticion, respue
   }
   if (error instanceof NoAutorizado) {
     respuesta.status(401).json({ mensaje: error.message });
+    return;
+  }
+  if (error instanceof HttpsRequerido) {
+    respuesta.status(403).json({ mensaje: error.message });
     return;
   }
   if (error instanceof NoEncontrado) {

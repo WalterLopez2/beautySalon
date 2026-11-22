@@ -141,7 +141,81 @@ describe('IniciarSesion', () => {
       DemasiadosIntentos,
     );
   });
+
+  it('el limite por usuario aguanta intentos simultaneos', async () => {
+    const { caso } = await crearCaso();
+
+    const resultados = await Promise.allSettled(
+      Array.from({ length: 30 }, () => caso.ejecutar({ usuario: 'delmy', contrasena: 'mal' }, IP)),
+    );
+
+    expect(rechazadosCon(resultados, NoAutorizado)).toBe(3); // solo estos llegaron a probar la contrasena
+    expect(rechazadosCon(resultados, DemasiadosIntentos)).toBe(27);
+  });
+
+  it('el limite por IP aguanta intentos simultaneos con cuentas distintas', async () => {
+    const { caso } = await crearCaso();
+
+    const resultados = await Promise.allSettled(
+      Array.from({ length: 30 }, (_, i) => caso.ejecutar({ usuario: `cuenta${i}`, contrasena: 'x' }, IP)),
+    );
+
+    expect(rechazadosCon(resultados, NoAutorizado)).toBe(5);
+    expect(rechazadosCon(resultados, DemasiadosIntentos)).toBe(25);
+  });
+
+  it('la contrasena correcta en medio de una rafaga ya bloqueada no entra', async () => {
+    const { caso } = await crearCaso();
+    const contrasenas = ['mal', 'mal', 'mal', 'contrasena-segura'];
+
+    const resultados = await Promise.allSettled(
+      contrasenas.map((contrasena) => caso.ejecutar({ usuario: 'delmy', contrasena }, IP)),
+    );
+
+    expect(resultados[3]).toMatchObject({ status: 'rejected', reason: expect.any(DemasiadosIntentos) });
+  });
+
+  it('los logins correctos no gastan el limite de la IP', async () => {
+    const { caso } = await crearCaso();
+
+    for (let vez = 0; vez < 7; vez++) {
+      await expect(caso.ejecutar({ usuario: 'delmy', contrasena: 'contrasena-segura' }, IP)).resolves.toBeDefined();
+    }
+  });
+
+  it('un login correcto no borra los fallos anteriores de la IP', async () => {
+    const { caso } = await crearCaso();
+    const fallar = (usuario: string) => caso.ejecutar({ usuario, contrasena: 'x' }, IP);
+    for (const usuario of ['a', 'b', 'c', 'd']) await expect(fallar(usuario)).rejects.toBeInstanceOf(NoAutorizado);
+
+    await caso.ejecutar({ usuario: 'delmy', contrasena: 'contrasena-segura' }, IP);
+
+    await expect(fallar('e')).rejects.toBeInstanceOf(NoAutorizado);
+    await expect(fallar('f')).rejects.toBeInstanceOf(DemasiadosIntentos);
+  });
+
+  it('una caida de la base de datos no bloquea a la duena', async () => {
+    const buscarPorUsuario = vi.fn(async (): Promise<Usuaria | null> => {
+      throw new Error('base caida');
+    });
+    const caso = new IniciarSesion({
+      usuarias: { buscarPorUsuario },
+      tokens: new EmisorDeTokens(SECRETO, UNA_HORA),
+      limites: {
+        porUsuario: new LimitadorDeIntentos({ intentos: 2, ventanaMs: UNA_HORA }),
+        porIp: new LimitadorDeIntentos({ intentos: 2, ventanaMs: UNA_HORA }),
+      },
+    });
+
+    for (let vez = 0; vez < 4; vez++) {
+      await expect(caso.ejecutar({ usuario: 'delmy', contrasena: 'x' }, IP)).rejects.toThrow('base caida');
+    }
+  });
 });
+
+function rechazadosCon(resultados: PromiseSettledResult<unknown>[], tipo: new (...args: never[]) => Error): number {
+  return resultados.filter((r) => r.status === 'rejected' && r.reason instanceof tipo).length;
+}
 
 describe('VerificarSesion y CerrarSesion', () => {
   function crearEscenario() {

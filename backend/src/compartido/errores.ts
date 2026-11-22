@@ -35,6 +35,14 @@ export class Conflicto extends Error {
   }
 }
 
+// Llego por HTTP plano y el servidor solo atiende por HTTPS.
+export class HttpsRequerido extends Error {
+  constructor() {
+    super('Esta API solo funciona por HTTPS.');
+    this.name = 'HttpsRequerido';
+  }
+}
+
 // Demasiados intentos en poco tiempo (login, agendar). Se responde 429 y se
 // indica cuanto esperar, sin decir cuantos intentos quedaban.
 export class DemasiadosIntentos extends Error {

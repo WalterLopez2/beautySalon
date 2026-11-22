@@ -11,7 +11,7 @@ import { Cliente } from '../src/compartido/clientes/repositorioClientes';
 import type { Bloqueo } from '../src/compartido/dominio/bloqueos';
 import { NoAutorizado } from '../src/compartido/errores';
 import { hashDeCodigo } from '../src/compartido/seguridad/codigosDeConsulta';
-import { LimitadorDeIntentos } from '../src/compartido/seguridad/LimitadorDeIntentos';
+import { LimitadorPorIp } from '../src/compartido/seguridad/LimitadorPorIp';
 import { EmisorDeTokens } from '../src/duena/autenticacion/tokens';
 import { CerrarSesion, VerificarSesion } from '../src/duena/autenticacion/VerificarSesion';
 import { CrearBloqueo } from '../src/duena/configuracion/CrearBloqueo';
@@ -71,7 +71,7 @@ const repositorioDeBloqueos = {
 };
 
 // Limites bajos para poder comprobar el 429 sin cientos de peticiones.
-const limiteDeAgendar = new LimitadorDeIntentos({ intentos: 3, ventanaMs: UNA_HORA });
+const limiteDeAgendar = new LimitadorPorIp({ intentos: 3, ventanaMs: UNA_HORA });
 
 const app = crearApp({
   clienta: {
@@ -92,7 +92,7 @@ const app = crearApp({
     agendarCita: { ejecutar: async () => ({ cita, codigoDeConsulta: CODIGO_DE_ANA }) },
     limites: {
       agendar: limiteDeAgendar,
-      consultarHistorial: new LimitadorDeIntentos({ intentos: 50, ventanaMs: UNA_HORA }),
+      consultarHistorial: new LimitadorPorIp({ intentos: 50, ventanaMs: UNA_HORA }),
     },
   },
   duena: {

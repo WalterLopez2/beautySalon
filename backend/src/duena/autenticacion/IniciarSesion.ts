@@ -10,7 +10,7 @@
 //   pasarian el limite mientras scrypt todavia calcula el primero.
 
 import { NoAutorizado } from '../../compartido/errores';
-import type { LimitadorDeIntentos } from '../../compartido/seguridad/LimitadorDeIntentos';
+import type { LimitadorPorIp } from '../../compartido/seguridad/LimitadorPorIp';
 import { cifrarContrasena, verificarContrasena } from './contrasenas';
 import type { Usuaria } from './repositorioUsuarias';
 import type { EmisorDeTokens } from './tokens';
@@ -30,8 +30,8 @@ export interface DependenciasDeIniciarSesion {
   usuarias: { buscarPorUsuario(usuario: string): Promise<Usuaria | null> };
   tokens: EmisorDeTokens;
   limites: {
-    porUsuario: LimitadorDeIntentos;
-    porIp: LimitadorDeIntentos;
+    porUsuario: LimitadorPorIp;
+    porIp: LimitadorPorIp;
   };
 }
 
@@ -48,11 +48,11 @@ export class IniciarSesion {
   // `ip` identifica de donde viene el intento, para los limites.
   async ejecutar({ usuario, contrasena }: Credenciales, ip: string): Promise<SesionIniciada> {
     const { tokens, limites } = this.dependencias;
-    const claveDeUsuario = `${usuario.trim().toLowerCase()}|${ip}`;
-    this.reservarIntento(claveDeUsuario, ip);
+    const cuenta = usuario.trim().toLowerCase();
+    this.reservarIntento(cuenta, ip);
 
     const usuaria = await this.autenticar({ usuario, contrasena }).catch((error: unknown) => {
-      this.devolverIntento(claveDeUsuario, ip); // fallo el sistema, no la duena
+      this.devolverIntento(cuenta, ip); // fallo el sistema, no la duena
       throw error;
     });
     if (!usuaria) {
@@ -60,25 +60,25 @@ export class IniciarSesion {
     }
 
     limites.porIp.devolver(ip);
-    limites.porUsuario.reiniciar(claveDeUsuario);
+    limites.porUsuario.reiniciar(ip, cuenta);
     const { token, expiraEn } = tokens.emitir(usuaria.id, usuaria.nombre, usuaria.versionSesion);
     return { token, nombre: usuaria.nombre, expiraEn: expiraEn.toISOString() };
   }
 
   // Sin ningun `await`: entre revisar y contar no se puede colar otro pedido.
   // Se revisan los dos limites antes de contar en cualquiera de ellos.
-  private reservarIntento(claveDeUsuario: string, ip: string): void {
+  private reservarIntento(cuenta: string, ip: string): void {
     const { porIp, porUsuario } = this.dependencias.limites;
     porIp.exigirDisponible(ip);
-    porUsuario.exigirDisponible(claveDeUsuario);
+    porUsuario.exigirDisponible(ip, cuenta);
     porIp.registrar(ip);
-    porUsuario.registrar(claveDeUsuario);
+    porUsuario.registrar(ip, cuenta);
   }
 
-  private devolverIntento(claveDeUsuario: string, ip: string): void {
+  private devolverIntento(cuenta: string, ip: string): void {
     const { porIp, porUsuario } = this.dependencias.limites;
     porIp.devolver(ip);
-    porUsuario.devolver(claveDeUsuario);
+    porUsuario.devolver(ip, cuenta);
   }
 
   // null = el usuario no existe o la contrasena esta mal.

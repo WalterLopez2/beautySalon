@@ -154,10 +154,13 @@ Las pruebas viven en `backend/test/` y usan dobles en lugar de PostgreSQL, así 
 
 ## Antes de publicar
 
+Arrancá la API con `pnpm --filter backend start`: ese comando (igual que `NODE_ENV=production`) no deja arrancar sin HTTPS.
+
 En el `.env` del servidor:
 
 - `PROXIES_DE_CONFIANZA=1` (o la cantidad de proxies delante de la API), para que los límites por IP funcionen detrás del hosting.
 - `SOLO_HTTPS=true` cuando la API se sirva por HTTPS. Necesita `PROXIES_DE_CONFIANZA` de 1 o más; si no, la API no arranca.
+- `DIRECCION_DE_ESCUCHA`: por defecto `127.0.0.1` (proxy en la misma máquina). Hostings como Render o contenedores piden `0.0.0.0`.
 - El puerto de la API solo debe ser alcanzable a través del proxy: quien llegue directo podría falsificar su IP y el protocolo (`X-Forwarded-*`).
 - `DB_SSL=true` cuando PostgreSQL esté en otro servidor, para que los datos de las clientas viajen cifrados entre la API y la base. Se verifica el certificado del servidor, así que el proveedor debe usar uno válido.
 

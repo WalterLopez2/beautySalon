@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
+    "start": "tsx src/index.ts --produccion",
     "build": "tsc",
     "db:preparar": "tsx src/scripts/prepararBaseDeDatos.ts",
     "crear-duena": "tsx src/scripts/crearDuena.ts",

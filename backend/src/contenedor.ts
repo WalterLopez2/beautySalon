@@ -10,7 +10,7 @@ import { RepositorioBloqueos } from './compartido/bloqueos/repositorioBloqueos';
 import { RepositorioCitas } from './compartido/citas/repositorioCitas';
 import { RepositorioClientes } from './compartido/clientes/repositorioClientes';
 import { RepositorioHorario } from './compartido/horario/repositorioHorario';
-import { LimitadorDeIntentos } from './compartido/seguridad/LimitadorDeIntentos';
+import { LimitadorPorIp } from './compartido/seguridad/LimitadorPorIp';
 import { LIMITES } from './compartido/seguridad/limites';
 import { RepositorioServicios } from './compartido/servicios/repositorioServicios';
 import type { Configuracion } from './configuracion';
@@ -55,8 +55,8 @@ export function crearDependencias(baseDeDatos: BaseDeDatos, configuracion: Confi
       citas,
       agendarCita,
       limites: {
-        agendar: new LimitadorDeIntentos(LIMITES.agendarPorIp),
-        consultarHistorial: new LimitadorDeIntentos(LIMITES.consultarHistorialPorIp),
+        agendar: new LimitadorPorIp(LIMITES.agendarPorIp),
+        consultarHistorial: new LimitadorPorIp(LIMITES.consultarHistorialPorIp),
       },
     },
     duena: {
@@ -64,8 +64,8 @@ export function crearDependencias(baseDeDatos: BaseDeDatos, configuracion: Confi
         usuarias,
         tokens,
         limites: {
-          porUsuario: new LimitadorDeIntentos(LIMITES.loginPorUsuario),
-          porIp: new LimitadorDeIntentos(LIMITES.loginPorIp),
+          porUsuario: new LimitadorPorIp(LIMITES.loginPorUsuario),
+          porIp: new LimitadorPorIp(LIMITES.loginPorIp),
         },
       }),
       verificarSesion: new VerificarSesion(tokens, usuarias),

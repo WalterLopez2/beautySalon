@@ -50,3 +50,51 @@ describe('SOLO_HTTPS', () => {
     expect(() => configuracionCon({ SOLO_HTTPS: 'true' })).toThrow('PROXIES_DE_CONFIANZA');
   });
 });
+
+describe('Produccion', () => {
+  const ENTORNO = { ...ENTORNO_MINIMO, TOKEN_SECRETO: 's'.repeat(32) };
+  const HTTPS_COMPLETO = { SOLO_HTTPS: 'true', PROXIES_DE_CONFIANZA: '1' };
+
+  it.each(['production', ' Production '])('con NODE_ENV="%s" no arranca sin HTTPS', (NODE_ENV) => {
+    expect(() => leerConfiguracion({ ...ENTORNO, NODE_ENV })).toThrow('En produccion SOLO_HTTPS');
+  });
+
+  it('con `pnpm start` no arranca sin HTTPS, aunque falte NODE_ENV', () => {
+    expect(() => leerConfiguracion(ENTORNO, { iniciadaParaProduccion: true })).toThrow('En produccion SOLO_HTTPS');
+  });
+
+  it('apagar SOLO_HTTPS a proposito tampoco sirve en produccion', () => {
+    const entorno = { ...ENTORNO, NODE_ENV: 'production', SOLO_HTTPS: 'false' };
+
+    expect(() => leerConfiguracion(entorno)).toThrow('En produccion SOLO_HTTPS');
+  });
+
+  it('arranca en produccion con HTTPS configurado', () => {
+    const configuracion = leerConfiguracion({ ...ENTORNO, ...HTTPS_COMPLETO }, { iniciadaParaProduccion: true });
+
+    expect(configuracion.soloHttps).toBe(true);
+  });
+
+  it('en desarrollo sigue arrancando sin HTTPS', () => {
+    expect(leerConfiguracion({ ...ENTORNO, NODE_ENV: 'development' }).soloHttps).toBe(false);
+  });
+});
+
+describe('Direccion donde escucha la API', () => {
+  function direccionCon(DIRECCION_DE_ESCUCHA?: string) {
+    return leerConfiguracion({ ...ENTORNO_MINIMO, TOKEN_SECRETO: 's'.repeat(32), DIRECCION_DE_ESCUCHA }).direccion;
+  }
+
+  it('por defecto solo esta computadora', () => {
+    expect(direccionCon()).toBe('127.0.0.1');
+    expect(direccionCon('  ')).toBe('127.0.0.1');
+  });
+
+  it.each(['0.0.0.0', '::', '10.0.0.5'])('se puede abrir a proposito en %s', (direccion) => {
+    expect(direccionCon(direccion)).toBe(direccion);
+  });
+
+  it.each(['localhost', '999.1.1.1', '0.0.0.0:3000'])('no arranca con "%s"', (direccion) => {
+    expect(() => direccionCon(direccion)).toThrow('DIRECCION_DE_ESCUCHA debe ser una direccion IP');
+  });
+});

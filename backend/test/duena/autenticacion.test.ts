@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DemasiadosIntentos, NoAutorizado } from '../../src/compartido/errores';
 import { LimitadorDeIntentos } from '../../src/compartido/seguridad/LimitadorDeIntentos';
+import { LimitadorPorIp } from '../../src/compartido/seguridad/LimitadorPorIp';
 import { cifrarContrasena, verificarContrasena } from '../../src/duena/autenticacion/contrasenas';
 import { IniciarSesion } from '../../src/duena/autenticacion/IniciarSesion';
 import type { Usuaria } from '../../src/duena/autenticacion/repositorioUsuarias';
@@ -81,8 +82,8 @@ describe('IniciarSesion', () => {
       usuarias: { buscarPorUsuario: async (usuario) => (usuario === 'delmy' ? delmy : null) },
       tokens,
       limites: {
-        porUsuario: new LimitadorDeIntentos({ intentos: 3, ventanaMs: UNA_HORA }),
-        porIp: new LimitadorDeIntentos({ intentos: 5, ventanaMs: UNA_HORA }),
+        porUsuario: new LimitadorPorIp({ intentos: 3, ventanaMs: UNA_HORA }),
+        porIp: new LimitadorPorIp({ intentos: 5, ventanaMs: UNA_HORA }),
       },
     });
     return { caso, tokens };
@@ -194,6 +195,19 @@ describe('IniciarSesion', () => {
     await expect(fallar('f')).rejects.toBeInstanceOf(DemasiadosIntentos);
   });
 
+  it('cambiar de IPv6 dentro de la misma red no evade el limite', async () => {
+    const { caso } = await crearCaso();
+
+    const resultados = await Promise.allSettled(
+      Array.from({ length: 30 }, (_, i) =>
+        caso.ejecutar({ usuario: 'delmy', contrasena: 'mal' }, `2001:db8:0:1::${(i + 1).toString(16)}`),
+      ),
+    );
+
+    expect(rechazadosCon(resultados, NoAutorizado)).toBe(3);
+    expect(rechazadosCon(resultados, DemasiadosIntentos)).toBe(27);
+  });
+
   it('una caida de la base de datos no bloquea a la duena', async () => {
     const buscarPorUsuario = vi.fn(async (): Promise<Usuaria | null> => {
       throw new Error('base caida');
@@ -202,8 +216,8 @@ describe('IniciarSesion', () => {
       usuarias: { buscarPorUsuario },
       tokens: new EmisorDeTokens(SECRETO, UNA_HORA),
       limites: {
-        porUsuario: new LimitadorDeIntentos({ intentos: 2, ventanaMs: UNA_HORA }),
-        porIp: new LimitadorDeIntentos({ intentos: 2, ventanaMs: UNA_HORA }),
+        porUsuario: new LimitadorPorIp({ intentos: 2, ventanaMs: UNA_HORA }),
+        porIp: new LimitadorPorIp({ intentos: 2, ventanaMs: UNA_HORA }),
       },
     });
 

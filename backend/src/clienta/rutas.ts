@@ -17,7 +17,7 @@ import {
   leerTextoOpcional,
 } from '../compartido/http/entrada';
 import { hashDeCodigo } from '../compartido/seguridad/codigosDeConsulta';
-import type { LimitadorDeIntentos } from '../compartido/seguridad/LimitadorDeIntentos';
+import type { LimitadorPorIp } from '../compartido/seguridad/LimitadorPorIp';
 import type { Servicio } from '../compartido/servicios/repositorioServicios';
 import type { CitaAgendada, SolicitudDeCita } from './AgendarCita';
 import { aAgendaPublica, type AgendaDelDiaPublica } from './presentacion';
@@ -28,8 +28,8 @@ export interface DependenciasDeLaClienta {
   citas: { listarPorTelefonoYCodigo(telefono: string, codigoHash: string): Promise<CitaRegistrada[]> };
   agendarCita: { ejecutar(solicitud: SolicitudDeCita): Promise<CitaAgendada> };
   limites: {
-    agendar: LimitadorDeIntentos;
-    consultarHistorial: LimitadorDeIntentos;
+    agendar: LimitadorPorIp;
+    consultarHistorial: LimitadorPorIp;
   };
 }
 

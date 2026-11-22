@@ -8,15 +8,24 @@ import { leerConfiguracion } from './configuracion';
 import { crearDependencias } from './contenedor';
 
 cargarArchivoEnv();
-const configuracion = leerConfiguracion();
+const configuracion = leerConfiguracion(process.env, {
+  iniciadaParaProduccion: process.argv.includes('--produccion'),
+});
 const baseDeDatos = new BaseDeDatosPostgres(new pg.Pool(configuracion.baseDeDatos));
 const app = crearApp(crearDependencias(baseDeDatos, configuracion), {
   proxiesDeConfianza: configuracion.proxiesDeConfianza,
   soloHttps: configuracion.soloHttps,
 });
 
-const servidor = app.listen(configuracion.puerto, () => {
-  console.log(`API del salon escuchando en http://localhost:${configuracion.puerto}/api`);
+const { direccion, puerto } = configuracion;
+const servidor = app.listen(puerto, direccion, (error) => {
+  // Express 5 llama aqui tambien cuando NO pudo abrir el puerto.
+  if (error) {
+    console.error(`La API no pudo abrir ${direccion}, puerto ${puerto}: ${error.message}`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log(`API del salon escuchando en ${direccion}, puerto ${puerto} (rutas en /api)`);
 });
 
 // Al detener el servidor (Ctrl+C o el hosting), termina las peticiones en

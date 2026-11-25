@@ -78,7 +78,7 @@ export function FormularioDeServicio({ borrador, esNuevo, guardando, errores, on
 
       <ListaDeErrores errores={errores} />
 
-      <div className="formulario-panel__acciones">
+      <div className="acciones-panel">
         <button type="submit" disabled={guardando || !borrador.estaCompleto()}>
           {guardando ? 'Guardando...' : 'Guardar'}
         </button>

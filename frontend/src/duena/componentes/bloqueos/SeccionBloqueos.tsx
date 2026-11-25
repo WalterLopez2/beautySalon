@@ -1,4 +1,4 @@
-// Dias libres y bloqueos de horas. Muestra los de los proximos dos meses y,
+// Dias libres y bloqueos de horas. Muestra los de los proximos 12 meses y,
 // al crear uno, avisa que citas ya estaban agendadas en ese tramo.
 
 import { useState } from 'react'
@@ -25,11 +25,12 @@ export function SeccionBloqueos({ fecha }: Props) {
 
   return (
     <section aria-labelledby="titulo-bloqueos">
-      <h2 id="titulo-bloqueos">Dias libres</h2>
-
-      <button type="button" onClick={() => setBorrador(BorradorDeBloqueo.para(fecha))}>
-        Bloquear dias u horas
-      </button>
+      <div className="encabezado-seccion">
+        <h2 id="titulo-bloqueos">Dias libres</h2>
+        <button type="button" onClick={() => setBorrador(BorradorDeBloqueo.para(fecha))}>
+          Bloquear dias u horas
+        </button>
+      </div>
 
       {borrador && (
         <FormularioDeBloqueo
@@ -46,13 +47,15 @@ export function SeccionBloqueos({ fecha }: Props) {
 
       <EstadoDeConsulta cargando={b.cargando} error={b.error} onReintentar={b.recargar}>
         {b.bloqueos.length === 0 ? (
-          <p>No hay bloqueos en los proximos dias.</p>
+          <p className="seccion-vacia">No hay bloqueos en los proximos dias.</p>
         ) : (
-          <ul>
+          <ul className="bloqueos">
             {b.bloqueos.map((bloqueo) => (
-              <li key={bloqueo.id}>
-                <p>{bloqueo.resumen()}</p>
-                {bloqueo.motivo && <p>{bloqueo.motivo}</p>}
+              <li key={bloqueo.id} className="bloqueo">
+                <div>
+                  <p className="bloqueo__cuando">{bloqueo.resumen()}</p>
+                  {bloqueo.motivo && <p className="bloqueo__motivo">{bloqueo.motivo}</p>}
+                </div>
                 <button type="button" onClick={() => void b.eliminar(bloqueo)} disabled={b.guardando}>
                   Quitar
                 </button>

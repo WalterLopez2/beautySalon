@@ -12,9 +12,9 @@ export function CitasAfectadas({ citas, onEntendido }: Props) {
   if (citas.length === 0) return null
 
   return (
-    <div role="alert">
+    <div className="aviso-panel aviso-panel--alerta" role="alert">
       <p>Estas citas ya estaban agendadas en el tramo bloqueado:</p>
-      <ul>
+      <ul className="aviso-panel__lista">
         {citas.map((item) => (
           <li key={item.id}>
             {item.nombreEscrito} - {item.cita.resumen()}{' '}

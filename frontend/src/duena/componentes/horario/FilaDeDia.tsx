@@ -16,10 +16,12 @@ export function FilaDeDia({ dia, horas, onAbrir, onCerrar }: Props) {
   const id = `dia-${dia.numero}`
 
   return (
-    <div role="group" aria-labelledby={`${id}-nombre`}>
-      <span id={`${id}-nombre`}>{dia.nombre}</span>
+    <div className="fila-dia" role="group" aria-labelledby={`${id}-nombre`}>
+      <span id={`${id}-nombre`} className="fila-dia__nombre">
+        {dia.nombre}
+      </span>
 
-      <label>
+      <label className="casilla">
         <input
           type="checkbox"
           checked={horas !== null}
@@ -28,8 +30,8 @@ export function FilaDeDia({ dia, horas, onAbrir, onCerrar }: Props) {
         Abierto
       </label>
 
-      {horas && (
-        <>
+      {horas ? (
+        <div className="fila-dia__horas">
           <label htmlFor={`${id}-apertura`}>Abre</label>
           <input
             id={`${id}-apertura`}
@@ -44,7 +46,9 @@ export function FilaDeDia({ dia, horas, onAbrir, onCerrar }: Props) {
             value={horas.cierre}
             onChange={(e) => onAbrir({ ...horas, cierre: e.target.value })}
           />
-        </>
+        </div>
+      ) : (
+        <span className="fila-dia__cerrado">Cerrado</span>
       )}
     </div>
   )

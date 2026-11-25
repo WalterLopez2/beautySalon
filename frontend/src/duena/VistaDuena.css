@@ -673,7 +673,9 @@
   font-size: clamp(30px, 4vw, 40px);
 }
 
-.encabezado-seccion > button {
+/* El boton principal de una seccion va relleno en dorado. */
+.encabezado-seccion > button,
+.boton-principal {
   background: var(--color-gold);
   color: var(--color-on-gold);
 }
@@ -699,10 +701,95 @@
   gap: 14px;
 }
 
-.formulario-panel__acciones {
+/* Fila de botones de un formulario (Guardar, Cancelar...). */
+.acciones-panel {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* Pegada abajo de la pantalla en formularios largos, como el del horario. */
+.acciones-panel--fija {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  margin: 0 -8px;
+  border-top: 1px solid var(--color-line);
+  padding: 12px 8px;
+  background: var(--color-background);
+}
+
+/* Un grupo de campos en tarjeta, con su titulo (fieldset y legend). */
+.grupo-panel {
+  display: grid;
+  gap: 4px;
+  min-width: 0; /* un fieldset no se encoge sin esto */
+  margin: 0;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  padding: 12px 20px 20px;
+  background: var(--color-surface);
+}
+
+.grupo-panel__titulo {
+  padding: 0 6px;
+  font: 500 22px var(--fuente-titulos);
+}
+
+/* Los campos van en columnas y el titulo ocupa toda la fila. */
+.grupo-panel--en-cuadricula {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 16px 20px;
+}
+
+.campo-panel {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+
+.campo-panel input {
+  width: 100%;
+}
+
+.campo-panel__ayuda {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+/* Casilla con su texto al lado, comoda para tocar con el dedo. */
+.casilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.casilla input {
+  width: 20px;
+  height: 20px;
+}
+
+/* Mensaje destacado dentro de una seccion. */
+.aviso-panel {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  border: 1px solid var(--color-gold);
+  border-radius: 14px;
+  padding: 14px 18px;
+  background: var(--color-surface);
+}
+
+.aviso-panel--alerta {
+  border-color: var(--color-rose);
+  background: color-mix(in srgb, var(--color-rose) 35%, var(--color-surface));
+}
+
+.aviso-panel__lista {
+  margin: 0;
+  padding-left: 20px;
 }
 
 .seccion-vacia {
@@ -800,6 +887,73 @@
 
 .servicio-panel--pausado :where(.servicio-panel__nombre, .servicio-panel__descripcion, .servicio-panel__detalle) {
   opacity: 0.6;
+}
+
+/* ----- Horario ----- */
+
+/* Dia | casilla | horas. Si no entra, las horas bajan a otra fila. */
+.fila-dia {
+  display: grid;
+  grid-template-columns: 110px auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 16px;
+  border-bottom: 1px solid var(--color-line);
+  padding: 8px 0;
+}
+
+.fila-dia:last-child {
+  border-bottom: 0;
+}
+
+.fila-dia__nombre {
+  font-weight: 500;
+}
+
+.fila-dia__horas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.fila-dia__cerrado {
+  color: var(--color-muted);
+}
+
+/* ----- Dias libres ----- */
+
+.bloqueos {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bloqueo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  border: 1px solid var(--color-line);
+  border-left: 4px solid var(--color-gold);
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: var(--color-surface);
+}
+
+.bloqueo__cuando {
+  font-weight: 500;
+}
+
+.bloqueo__cuando::first-letter {
+  text-transform: uppercase;
+}
+
+.bloqueo__motivo {
+  color: var(--color-muted);
+  font-size: 15px;
 }
 
 /* ----- Cargando y error de cada seccion ----- */
@@ -904,6 +1058,22 @@
 
   .ficha-clienta {
     position: static;
+  }
+
+  /* En el celular el dia y la casilla quedan arriba y las horas debajo. */
+  .fila-dia {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .fila-dia__horas,
+  .fila-dia__cerrado {
+    grid-column: 1 / -1;
+  }
+
+  /* Abre [hora] y Cierra [hora], cada una en su fila. */
+  .fila-dia__horas {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   /* En el celular la indicacion solo empujaria la lista hacia abajo. */

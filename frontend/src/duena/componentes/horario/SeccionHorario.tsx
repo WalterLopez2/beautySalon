@@ -18,10 +18,14 @@ export function SeccionHorario() {
       <EstadoDeConsulta cargando={h.cargando || !h.horario} error={h.error}>
         {h.horario && (
           <>
-            {!h.horario.yaGuardado && <p role="status">Todavia no configuraste el horario del salon.</p>}
+            {!h.horario.yaGuardado && (
+              <p className="aviso-panel" role="status">
+                Todavia no configuraste el horario del salon. Mientras tanto, las clientas lo ven cerrado.
+              </p>
+            )}
 
-            <fieldset>
-              <legend>Dias de atencion</legend>
+            <fieldset className="grupo-panel">
+              <legend className="grupo-panel__titulo">Dias de atencion</legend>
               {DIAS_DE_LA_SEMANA.map((dia) => (
                 <FilaDeDia
                   key={dia.numero}
@@ -33,8 +37,8 @@ export function SeccionHorario() {
               ))}
             </fieldset>
 
-            <fieldset>
-              <legend>Reglas de reserva</legend>
+            <fieldset className="grupo-panel grupo-panel--en-cuadricula">
+              <legend className="grupo-panel__titulo">Reglas de reserva</legend>
 
               {REGLAS_DE_RESERVA.map((regla) => (
                 <CampoDeReglaDeReserva
@@ -45,26 +49,36 @@ export function SeccionHorario() {
                 />
               ))}
 
-              <label htmlFor="horario-zona">Zona horaria</label>
-              <input
-                id="horario-zona"
-                value={h.horario.zonaHoraria}
-                onChange={(e) => h.cambiarZonaHoraria(e.target.value)}
-              />
+              <div className="campo-panel">
+                <label htmlFor="horario-zona">Zona horaria</label>
+                <input
+                  id="horario-zona"
+                  aria-describedby="horario-zona-ayuda"
+                  value={h.horario.zonaHoraria}
+                  onChange={(e) => h.cambiarZonaHoraria(e.target.value)}
+                />
+                <p id="horario-zona-ayuda" className="campo-panel__ayuda">
+                  Con ella se calcula la fecha y la hora del salon.
+                </p>
+              </div>
             </fieldset>
 
             <ListaDeErrores errores={h.errores.length > 0 ? h.errores : h.horario.errores()} />
 
-            <button
-              type="button"
-              onClick={() => void h.guardar()}
-              disabled={h.guardando || !h.hayCambiosSinGuardar || !h.horario.estaCompleto()}
-            >
-              {h.guardando ? 'Guardando...' : 'Guardar horario'}
-            </button>
-            <button type="button" onClick={h.descartarCambios} disabled={h.guardando || !h.hayCambiosSinGuardar}>
-              Descartar cambios
-            </button>
+            {/* Fija abajo: con tantos campos, Guardar siempre queda a mano. */}
+            <div className="acciones-panel acciones-panel--fija">
+              <button
+                type="button"
+                className="boton-principal"
+                onClick={() => void h.guardar()}
+                disabled={h.guardando || !h.hayCambiosSinGuardar || !h.horario.estaCompleto()}
+              >
+                {h.guardando ? 'Guardando...' : 'Guardar horario'}
+              </button>
+              <button type="button" onClick={h.descartarCambios} disabled={h.guardando || !h.hayCambiosSinGuardar}>
+                Descartar cambios
+              </button>
+            </div>
           </>
         )}
       </EstadoDeConsulta>

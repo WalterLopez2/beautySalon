@@ -17,7 +17,7 @@ export function CampoDeReglaDeReserva({ regla, valor, onCambiar }: Props) {
   const id = `regla-${regla.campo}`
 
   return (
-    <div>
+    <div className="campo-panel">
       <label htmlFor={id}>{regla.etiqueta}</label>
       <input
         id={id}
@@ -28,7 +28,9 @@ export function CampoDeReglaDeReserva({ regla, valor, onCambiar }: Props) {
         value={valor ?? ''}
         onChange={(e) => onCambiar(aNumeroONull(e.target.value))}
       />
-      <p id={`${id}-ayuda`}>{regla.ayuda}</p>
+      <p id={`${id}-ayuda`} className="campo-panel__ayuda">
+        {regla.ayuda}
+      </p>
     </div>
   )
 }

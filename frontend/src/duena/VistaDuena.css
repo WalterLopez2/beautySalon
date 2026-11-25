@@ -658,6 +658,150 @@
   font-size: 15px;
 }
 
+/* ----- Piezas que comparten varias secciones ----- */
+
+/* Titulo de la seccion con su boton principal a la derecha. */
+.encabezado-seccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+
+.encabezado-seccion > h2 {
+  font-size: clamp(30px, 4vw, 40px);
+}
+
+.encabezado-seccion > button {
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+}
+
+/* Formulario en una tarjeta, para crear o editar algo. */
+.formulario-panel {
+  gap: 14px;
+  width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  padding: 22px 20px;
+  background: var(--color-surface);
+}
+
+.formulario-panel input:not([type='checkbox'], [type='radio']) {
+  width: 100%;
+}
+
+/* Campos cortos uno al lado del otro; en pantallas chicas bajan solos. */
+.formulario-panel__fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 14px;
+}
+
+.formulario-panel__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.seccion-vacia {
+  border: 1px dashed var(--color-line);
+  border-radius: 14px;
+  padding: 24px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* ----- Servicios ----- */
+
+.servicios-del-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.servicio-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: var(--color-surface);
+}
+
+.servicio-panel__encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.servicio-panel__categoria {
+  color: var(--color-gold);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.servicio-panel__pausado {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 2px 12px;
+  background: var(--color-sand);
+  font-size: 13px;
+}
+
+.servicio-panel__nombre {
+  font-size: 24px;
+}
+
+.servicio-panel__descripcion {
+  color: var(--color-muted);
+  font-size: 15px;
+}
+
+.servicio-panel__detalle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: auto;
+  padding-top: 8px;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.servicio-panel__precio {
+  color: var(--color-ink);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.servicio-panel__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid var(--color-line);
+  padding-top: 12px;
+}
+
+/* Pausado: no se ofrece a las clientas, por eso se ve apagado. */
+.servicio-panel--pausado {
+  background: var(--color-background);
+}
+
+.servicio-panel--pausado :where(.servicio-panel__nombre, .servicio-panel__descripcion, .servicio-panel__detalle) {
+  opacity: 0.6;
+}
+
 /* ----- Cargando y error de cada seccion ----- */
 
 .estado-consulta {

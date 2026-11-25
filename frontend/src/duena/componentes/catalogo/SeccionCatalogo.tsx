@@ -6,6 +6,7 @@ import type { ServicioDelPanel } from '../../features/catalogo/ServicioDelPanel.
 import { useCatalogoDelPanel } from '../../hooks/useCatalogoDelPanel.ts'
 import { EstadoDeConsulta } from '../EstadoDeConsulta.tsx'
 import { FormularioDeServicio } from './FormularioDeServicio.tsx'
+import { TarjetaDeServicio } from './TarjetaDeServicio.tsx'
 
 // null = formulario cerrado; id undefined = servicio nuevo.
 type Edicion = { borrador: BorradorDeServicio; id?: number } | null
@@ -25,11 +26,12 @@ export function SeccionCatalogo() {
 
   return (
     <section aria-labelledby="titulo-catalogo">
-      <h2 id="titulo-catalogo">Servicios</h2>
-
-      <button type="button" onClick={() => setEdicion({ borrador: BorradorDeServicio.vacio() })}>
-        Nuevo servicio
-      </button>
+      <div className="encabezado-seccion">
+        <h2 id="titulo-catalogo">Servicios</h2>
+        <button type="button" onClick={() => setEdicion({ borrador: BorradorDeServicio.vacio() })}>
+          Nuevo servicio
+        </button>
+      </div>
 
       {edicion && (
         <FormularioDeServicio
@@ -45,22 +47,17 @@ export function SeccionCatalogo() {
 
       <EstadoDeConsulta cargando={cargando} error={error} onReintentar={recargar}>
         {servicios.length === 0 ? (
-          <p>Todavia no hay servicios.</p>
+          <p className="seccion-vacia">Todavia no hay servicios.</p>
         ) : (
-          <ul>
+          <ul className="servicios-del-panel">
             {servicios.map((item) => (
               <li key={item.id}>
-                <h3>{item.servicio.nombre}</h3>
-                <p>
-                  {item.servicio.precioFormateado()} - {item.servicio.duracionFormateada()}
-                </p>
-                {item.estaPausado() && <p>Pausado</p>}
-                <button type="button" onClick={() => editar(item)} disabled={guardando}>
-                  Editar
-                </button>
-                <button type="button" onClick={() => void cambiarActivo(item)} disabled={guardando}>
-                  {item.estaPausado() ? 'Reactivar' : 'Pausar'}
-                </button>
+                <TarjetaDeServicio
+                  item={item}
+                  guardando={guardando}
+                  onEditar={() => editar(item)}
+                  onCambiarActivo={() => void cambiarActivo(item)}
+                />
               </li>
             ))}
           </ul>

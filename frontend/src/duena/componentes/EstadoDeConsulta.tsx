@@ -12,12 +12,16 @@ interface Props {
 
 export function EstadoDeConsulta({ cargando, error, onReintentar, children }: Props) {
   if (cargando) {
-    return <p role="status">Cargando...</p>
+    return (
+      <p className="estado-consulta" role="status">
+        Cargando...
+      </p>
+    )
   }
 
   if (error) {
     return (
-      <div role="alert">
+      <div className="estado-consulta estado-consulta--error" role="alert">
         <p>{error}</p>
         {onReintentar && (
           <button type="button" onClick={onReintentar}>

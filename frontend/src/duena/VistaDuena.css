@@ -1,0 +1,309 @@
+/* Estilos del panel de la duena. Se cargan solo con la vista del panel (que es
+   lazy), asi la pagina publica no los descarga. Los colores salen de las
+   variables definidas en index.css. */
+
+/* ----- Base ----- */
+
+.vista-duena {
+  min-height: 100vh;
+  background: var(--color-background);
+  color: var(--color-ink);
+  font: 400 16px/1.6 var(--fuente-texto);
+  /* Nombres, servicios o notas largas no deben romper el diseno. */
+  overflow-wrap: anywhere;
+}
+
+/* :where no suma especificidad: cada clase del panel puede cambiar estos valores. */
+.vista-duena :where(h1, h2, h3) {
+  margin: 0;
+  font-family: var(--fuente-titulos);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.vista-duena :where(p) {
+  margin: 0;
+}
+
+.vista-duena :focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+/* ----- Botones y campos de todas las secciones ----- */
+
+.vista-duena :where(button) {
+  min-height: 44px; /* lo minimo para tocar con el dedo */
+  border: 1px solid var(--color-gold);
+  border-radius: 999px;
+  padding: 8px 18px;
+  background: none;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.vista-duena :where(button:hover:not(:disabled)) {
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+}
+
+.vista-duena :where(button[type='submit']) {
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+}
+
+.vista-duena :where(button[type='submit']:hover:not(:disabled)) {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+}
+
+.vista-duena :where(button:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vista-duena :where(input:not([type='checkbox'], [type='radio']), select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+}
+
+.vista-duena :where(textarea) {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+}
+
+.vista-duena :where(input, select, textarea):focus-visible {
+  border-color: var(--color-gold);
+}
+
+.vista-duena :where(input[type='checkbox'], input[type='radio']) {
+  accent-color: var(--color-gold);
+}
+
+.vista-duena :where(a) {
+  color: var(--color-gold);
+}
+
+.lista-de-errores {
+  margin: 0;
+  border-left: 3px solid var(--color-rose);
+  padding: 8px 0 8px 22px;
+  font-size: 15px;
+}
+
+/* ----- Estructura: menu lateral a la izquierda, contenido a la derecha ----- */
+
+.panel-duena {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.panel-duena__lateral {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  height: 100vh;
+  border-right: 1px solid var(--color-line);
+  padding: 28px 16px;
+  background: var(--color-sand);
+}
+
+.panel-duena__marca {
+  padding: 0 12px;
+  color: var(--color-gold);
+  font: 500 24px var(--fuente-titulos);
+  letter-spacing: 0.12em;
+}
+
+.panel-duena__sesion {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin-top: auto;
+  padding: 0 12px;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.panel-duena__cuerpo {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  padding: 36px 40px 56px;
+}
+
+.panel-duena__aviso {
+  border: 1px solid var(--color-gold);
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: var(--color-surface);
+}
+
+.panel-duena__contenido {
+  width: 100%;
+  max-width: 1040px;
+}
+
+/* Cada seccion: titulo arriba y sus bloques separados por el mismo espacio. */
+.panel-duena__contenido > section {
+  display: grid;
+  gap: 20px;
+}
+
+.panel-duena__contenido > section > h2 {
+  font-size: clamp(30px, 4vw, 40px);
+}
+
+.panel-duena__contenido :where(h3) {
+  font-size: 22px;
+}
+
+/* Formularios: cada etiqueta arriba de su campo, uno debajo del otro. */
+.panel-duena__contenido :where(form) {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  max-width: 640px;
+}
+
+.panel-duena__contenido :where(form > div:not([role])) {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+}
+
+/* ----- Menu de secciones ----- */
+
+.menu-panel__lista {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.menu-panel__opcion {
+  width: 100%;
+  border-color: transparent;
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.menu-panel__opcion:hover:not([aria-current]) {
+  border-color: var(--color-line);
+  background: var(--color-background);
+  color: var(--color-ink);
+}
+
+.menu-panel__opcion[aria-current='page'] {
+  background: var(--color-ink);
+  color: var(--color-background);
+}
+
+/* ----- Cargando y error de cada seccion ----- */
+
+.estado-consulta {
+  color: var(--color-muted);
+}
+
+.estado-consulta--error {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  border-left: 3px solid var(--color-rose);
+  padding: 8px 0 8px 16px;
+  color: var(--color-ink);
+}
+
+.pantalla-del-panel {
+  padding: 30vh 24px 0;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* ----- Pantallas chicas: el menu pasa arriba y se desliza de lado ----- */
+
+@media (max-width: 820px) {
+  .panel-duena {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel-duena__lateral {
+    z-index: 20;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-line);
+    padding: 12px 16px 8px;
+  }
+
+  .panel-duena__marca {
+    align-self: center;
+    padding: 0;
+    overflow: hidden;
+    font-size: 20px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Arriba a la derecha, en la misma fila que la marca. */
+  .panel-duena__sesion {
+    grid-row: 1;
+    grid-column: 2;
+    grid-auto-flow: column;
+    align-items: center;
+    margin-top: 0;
+    padding: 0;
+  }
+
+  /* El saludo se oculta en el celular; el boton de salir sigue visible. */
+  .panel-duena__saludo {
+    display: none;
+  }
+
+  .menu-panel {
+    grid-column: 1 / -1;
+    /* Que se vea cortado el ultimo boton avisa que hay mas al deslizar. */
+    margin: 0 -16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .menu-panel__lista {
+    grid-auto-flow: column;
+    padding: 0 16px 4px;
+  }
+
+  .menu-panel__opcion {
+    width: auto;
+    border-radius: 999px;
+  }
+
+  .panel-duena__cuerpo {
+    padding: 24px 16px 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vista-duena * {
+    transition: none !important;
+  }
+}

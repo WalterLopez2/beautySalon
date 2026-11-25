@@ -10,12 +10,13 @@ interface Props {
 
 export function MenuDelPanel({ seccionActual, onElegir }: Props) {
   return (
-    <nav aria-label="Secciones del panel">
-      <ul>
+    <nav className="menu-panel" aria-label="Secciones del panel">
+      <ul className="menu-panel__lista">
         {SECCIONES_DEL_PANEL.map(({ id, texto }) => (
           <li key={id}>
             <button
               type="button"
+              className="menu-panel__opcion"
               aria-current={id === seccionActual ? 'page' : undefined}
               aria-controls="contenido-del-panel"
               onClick={() => onElegir(id)}

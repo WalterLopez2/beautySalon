@@ -339,30 +339,30 @@
   font-weight: 500;
 }
 
-/* ----- Agenda: resumen del dia ----- */
+/* ----- Cifras destacadas (resumen del dia, ficha de la clienta) ----- */
 
-.resumen-del-dia {
+.cifras {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
   gap: 12px;
   margin: 0;
 }
 
-.resumen-del-dia__dato {
+.cifras__dato {
   border: 1px solid var(--color-line);
   border-radius: 14px;
   padding: 14px 18px;
   background: var(--color-surface);
 }
 
-.resumen-del-dia__dato dt {
+.cifras__dato dt {
   color: var(--color-muted);
   font-size: 13px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.resumen-del-dia__dato dd {
+.cifras__dato dd {
   margin: 0;
   font: 500 28px/1.3 var(--fuente-titulos);
   /* La fuente de titulos dibuja el 1 como una I; asi se leen como cifras. */
@@ -521,6 +521,143 @@
   text-decoration: line-through;
 }
 
+/* ----- Clientas: lista a la izquierda, ficha a la derecha ----- */
+
+.clientas {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  grid-template-areas:
+    'titulo titulo'
+    'buscador ficha'
+    'lista ficha';
+  /* Lo que sobra de alto va a la ultima fila: el buscador no se separa de la lista. */
+  grid-template-rows: auto auto 1fr;
+  align-items: start;
+}
+
+.clientas > h2 {
+  grid-area: titulo;
+}
+
+.clientas__buscador {
+  display: grid;
+  gap: 4px;
+  grid-area: buscador;
+}
+
+.clientas__lista {
+  grid-area: lista;
+}
+
+.clientas__vacio {
+  color: var(--color-muted);
+}
+
+.directorio {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.directorio__clienta {
+  display: grid;
+  width: 100%;
+  border-color: var(--color-line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  text-align: left;
+}
+
+.directorio__nombre {
+  font-weight: 500;
+}
+
+.directorio__telefono {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.directorio__clienta[aria-pressed='true'] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-background);
+}
+
+.directorio__clienta[aria-pressed='true'] .directorio__telefono {
+  color: inherit;
+}
+
+/* Al bajar por una lista larga, la ficha abierta sigue a la vista. */
+.ficha-clienta {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 16px;
+  grid-area: ficha;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  padding: 20px;
+  background: var(--color-surface);
+}
+
+.ficha-clienta--sin-elegir {
+  border-style: dashed;
+  padding: 32px 20px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.ficha-clienta__cerrar {
+  justify-self: end;
+}
+
+.ficha-clienta__contacto {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  color: var(--color-muted);
+}
+
+.ficha-clienta__contacto h3 {
+  color: var(--color-ink);
+  font-size: 28px;
+}
+
+.ficha-clienta__contacto a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.ficha-clienta .cifras {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+}
+
+.ficha-clienta .cifras__dato dd {
+  font-size: 22px;
+}
+
+.ficha-clienta__subtitulo {
+  margin: 0;
+  font: 500 20px var(--fuente-titulos);
+}
+
+.ficha-clienta__citas {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ficha-clienta__cita {
+  border-left: 3px solid var(--color-line);
+  padding: 4px 0 4px 12px;
+  font-size: 15px;
+}
+
 /* ----- Cargando y error de cada seccion ----- */
 
 .estado-consulta {
@@ -608,6 +745,26 @@
 
   .login__tarjeta {
     padding: 32px 20px 28px;
+  }
+
+  /* Una sola columna; la ficha elegida sube antes de la lista. */
+  .clientas {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'titulo'
+      'buscador'
+      'ficha'
+      'lista';
+    grid-template-rows: none;
+  }
+
+  .ficha-clienta {
+    position: static;
+  }
+
+  /* En el celular la indicacion solo empujaria la lista hacia abajo. */
+  .ficha-clienta--sin-elegir {
+    display: none;
   }
 
   /* WhatsApp en su propia fila: los botones de la cita quedan juntos debajo. */

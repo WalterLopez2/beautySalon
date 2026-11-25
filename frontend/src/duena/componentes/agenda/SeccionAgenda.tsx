@@ -39,16 +39,16 @@ export function SeccionAgenda({ fecha, onCambiarFecha }: Props) {
       <SelectorDeFecha fecha={fecha} onCambiar={onCambiarFecha} />
 
       <EstadoDeConsulta cargando={cargando} error={error} onReintentar={recargar}>
-        <dl className="resumen-del-dia">
-          <div className="resumen-del-dia__dato">
+        <dl className="cifras">
+          <div className="cifras__dato">
             <dt>Por confirmar</dt>
             <dd>{agenda.porConfirmar().length}</dd>
           </div>
-          <div className="resumen-del-dia__dato">
+          <div className="cifras__dato">
             <dt>Cobrado</dt>
             <dd>{formatearLempiras(agenda.ingresoCobrado())}</dd>
           </div>
-          <div className="resumen-del-dia__dato">
+          <div className="cifras__dato">
             <dt>Esperado</dt>
             <dd>{formatearLempiras(agenda.ingresoEsperado())}</dd>
           </div>

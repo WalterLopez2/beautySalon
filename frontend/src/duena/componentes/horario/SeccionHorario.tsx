@@ -1,7 +1,8 @@
 // Editor del horario de atencion y las reglas de reserva. Los cambios se
 // guardan todos juntos con "Guardar horario".
 
-import { DIAS_DE_LA_SEMANA, REGLAS_DE_RESERVA } from '../../features/horario/HorarioSemanal.ts'
+import { DIAS_DE_LA_SEMANA } from '../../../compartido/dominio/DiasDeLaSemana.ts'
+import { REGLAS_DE_RESERVA } from '../../features/horario/HorarioSemanal.ts'
 import { useHorarioDelSalon } from '../../hooks/useHorarioDelSalon.ts'
 import { EstadoDeConsulta } from '../EstadoDeConsulta.tsx'
 import { ListaDeErrores } from '../../../compartido/componentes/ListaDeErrores.tsx'

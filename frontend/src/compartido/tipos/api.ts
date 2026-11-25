@@ -48,6 +48,7 @@ export interface PlazoDeReservaDTO {
 export interface SalonDTO {
   informacion: InformacionDelSalonDTO | null // null = la duena todavia no la llena
   reservas: PlazoDeReservaDTO | null // null = no recibe reservas
+  diasDeAtencion: DiaDeAtencionDTO[] // solo los que abre; vacio = sin horario
 }
 
 export interface CitaDTO {

@@ -31,11 +31,21 @@ describe('ConsultarSalon', () => {
     });
   });
 
-  it('sin configurar no recibe reservas', async () => {
-    expect((await consultar(null)).reservas).toBeNull();
+  it('sin configurar no recibe reservas ni muestra horario', async () => {
+    const salon = await consultar(null);
+    expect(salon.reservas).toBeNull();
+    expect(salon.diasDeAtencion).toEqual([]);
   });
 
   it('sin ningun dia abierto no recibe reservas', async () => {
     expect((await consultar({ configuracion, dias: [] })).reservas).toBeNull();
+  });
+
+  it('muestra los dias que abre, de lunes a domingo, con sus horas', async () => {
+    const sabado: HorarioDeUnDia = { diaSemana: 6, aperturaMin: 480, cierreMin: 780 };
+    expect((await consultar({ configuracion, dias: [sabado, lunes] })).diasDeAtencion).toEqual([
+      { diaSemana: 1, apertura: '09:00', cierre: '18:00' },
+      { diaSemana: 6, apertura: '08:00', cierre: '13:00' },
+    ]);
   });
 });

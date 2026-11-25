@@ -6,23 +6,9 @@
 // Nada viene predefinido. Un salon nuevo empieza sin dias (cerrado), sin
 // reglas; solo la zona horaria se propone desde el navegador.
 
+import { DIAS_DE_LA_SEMANA } from '../../../compartido/dominio/DiasDeLaSemana.ts'
 import type { DiaDeAtencionDTO, GuardarHorarioDTO, HorarioSemanalDTO } from '../../../compartido/tipos/api.ts'
 import { esHoraValida, horaAMinutos } from '../../../compartido/utils/hora.ts'
-
-export interface DiaDeLaSemana {
-  numero: number // 1 = lunes ... 7 = domingo (ISO 8601, igual que el backend)
-  nombre: string
-}
-
-export const DIAS_DE_LA_SEMANA: readonly DiaDeLaSemana[] = [
-  { numero: 1, nombre: 'Lunes' },
-  { numero: 2, nombre: 'Martes' },
-  { numero: 3, nombre: 'Miercoles' },
-  { numero: 4, nombre: 'Jueves' },
-  { numero: 5, nombre: 'Viernes' },
-  { numero: 6, nombre: 'Sabado' },
-  { numero: 7, nombre: 'Domingo' },
-]
 
 export interface HorasDelDia {
   apertura: string // HH:MM

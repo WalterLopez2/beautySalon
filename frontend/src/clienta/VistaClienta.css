@@ -463,6 +463,68 @@
   font-size: 15px;
 }
 
+/* ----- Reservar: formulario y horario de atencion al costado ----- */
+
+.reservar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  grid-template-areas: 'formulario lateral';
+  align-items: start;
+  gap: 28px;
+}
+
+.reservar > .formulario-cita {
+  grid-area: formulario;
+  max-width: none;
+}
+
+.reservar__lateral {
+  position: sticky;
+  top: 88px; /* debajo del encabezado fijo */
+  grid-area: lateral;
+}
+
+.horario-atencion {
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  padding: 22px 20px;
+  background: var(--color-surface);
+}
+
+.horario-atencion__titulo {
+  margin-bottom: 8px;
+  font-size: 24px;
+}
+
+.horario-atencion__dias {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+}
+
+.horario-atencion__dia {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 12px;
+  border-bottom: 1px solid var(--color-line);
+  padding: 8px 0;
+}
+
+.horario-atencion__dia:last-child {
+  border-bottom: 0;
+}
+
+.horario-atencion__dia--hoy {
+  color: var(--color-gold);
+  font-weight: 500;
+}
+
+.horario-atencion__hoy {
+  font-weight: 300;
+}
+
 /* ----- Detalle y comprobante de la cita ----- */
 
 .detalle-cita {
@@ -674,6 +736,20 @@
     justify-content: space-around;
     gap: 8px;
     width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Una columna: el horario arriba del formulario. */
+  .reservar {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'lateral'
+      'formulario';
+  }
+
+  .reservar__lateral {
+    position: static;
   }
 }
 

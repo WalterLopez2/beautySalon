@@ -1,6 +1,7 @@
 // Un dia de la semana en el editor de horario: abierto (con sus horas) o cerrado.
 
-import type { DiaDeLaSemana, HorasDelDia } from '../../features/horario/HorarioSemanal.ts'
+import type { DiaDeLaSemana } from '../../../compartido/dominio/DiasDeLaSemana.ts'
+import type { HorasDelDia } from '../../features/horario/HorarioSemanal.ts'
 
 // Horas que se proponen al abrir un dia que estaba cerrado.
 const HORAS_AL_ABRIR: HorasDelDia = { apertura: '', cierre: '' }

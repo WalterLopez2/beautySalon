@@ -88,7 +88,7 @@ const app = crearApp({
         horarioDelDia: async (dia) => (dia === DOMINGO ? null : { aperturaMin: 540, cierreMin: 1080 }),
       },
     }, () => new Date('2026-11-09T14:00:00Z')),
-    consultarSalon: { ejecutar: async () => ({ informacion: informacionDelSalon, reservas: null }) },
+    consultarSalon: { ejecutar: async () => ({ informacion: informacionDelSalon, reservas: null, diasDeAtencion: [] }) },
     horario: {
       obtenerConfiguracion: async () => ({ ...configuracionDelSalon, citasPorConexionAlDia: CUPO_POR_CONEXION }),
     },
@@ -627,7 +627,7 @@ describe('Informacion del salon', () => {
   it('la pagina publica la lee sin sesion y sin guardarla en cache', async () => {
     const respuesta = await pedir('/salon');
 
-    expect(await respuesta.json()).toEqual({ informacion: informacionDelSalon, reservas: null });
+    expect(await respuesta.json()).toEqual({ informacion: informacionDelSalon, reservas: null, diasDeAtencion: [] });
     expect(respuesta.headers.get('cache-control')).toBe('no-store');
   });
 

@@ -14,6 +14,7 @@ import type { SalonEnPantalla } from '../../hooks/useSalon.ts'
 import { AvisoConReintento } from '../AvisoConReintento.tsx'
 import { ContactoDelSalon } from '../ContactoDelSalon.tsx'
 import { SECCIONES } from '../secciones.ts'
+import { TablaDeHorario } from '../TablaDeHorario.tsx'
 import { CamposDeContacto } from './CamposDeContacto.tsx'
 import { ComprobanteDeCita } from './ComprobanteDeCita.tsx'
 import { PasoDelFormulario } from './PasoDelFormulario.tsx'
@@ -77,7 +78,14 @@ function ContenidoDeReservar({ catalogoEnPantalla, salonEnPantalla }: Props) {
     return <p className="seccion__aviso">Por ahora no hay servicios disponibles para agendar.</p>
   }
 
-  return <FormularioDeCita servicios={catalogo.todos()} plazo={salon.plazo} telefono={salon.telefono} />
+  return (
+    <div className="reservar">
+      <aside className="reservar__lateral">
+        <TablaDeHorario horario={salon.horario} hoy={salon.plazo.primeraFecha} />
+      </aside>
+      <FormularioDeCita servicios={catalogo.todos()} plazo={salon.plazo} telefono={salon.telefono} />
+    </div>
+  )
 }
 
 interface PropsDelFormulario {

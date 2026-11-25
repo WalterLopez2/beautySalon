@@ -275,6 +275,252 @@
   margin-top: 16px;
 }
 
+/* ----- Selector de fecha (agenda e ingresos) ----- */
+
+.selector-fecha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.selector-fecha__calendario {
+  margin-left: 4px;
+}
+
+/* "martes, 24 de noviembre" -> "Martes, 24 de noviembre". */
+.selector-fecha__texto {
+  flex-basis: 100%;
+  font: 500 24px var(--fuente-titulos);
+  font-variant-numeric: lining-nums;
+}
+
+.selector-fecha__texto::first-letter {
+  text-transform: uppercase;
+}
+
+/* ----- Agenda: solicitudes por confirmar ----- */
+
+.solicitudes {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  padding: 20px;
+  background: var(--color-sand);
+}
+
+.solicitudes__ayuda {
+  color: var(--color-muted);
+  font-size: 15px;
+}
+
+.solicitudes__lista {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.solicitudes__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  font-size: 15px;
+}
+
+.solicitudes__nombre {
+  font-weight: 500;
+}
+
+/* ----- Agenda: resumen del dia ----- */
+
+.resumen-del-dia {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.resumen-del-dia__dato {
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  padding: 14px 18px;
+  background: var(--color-surface);
+}
+
+.resumen-del-dia__dato dt {
+  color: var(--color-muted);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.resumen-del-dia__dato dd {
+  margin: 0;
+  font: 500 28px/1.3 var(--fuente-titulos);
+  /* La fuente de titulos dibuja el 1 como una I; asi se leen como cifras. */
+  font-variant-numeric: lining-nums;
+}
+
+/* ----- Agenda: lista de citas del dia ----- */
+
+.agenda__error {
+  border-left: 3px solid var(--color-rose);
+  padding: 8px 0 8px 16px;
+}
+
+.agenda__vacia {
+  border: 1px dashed var(--color-line);
+  border-radius: 14px;
+  padding: 24px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.agenda__citas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ----- Tarjeta de cita ----- */
+
+.tarjeta-cita {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  border: 1px solid var(--color-line);
+  border-left: 4px solid var(--color-line);
+  border-radius: 16px;
+  padding: 18px 20px;
+  background: var(--color-surface);
+  transition: opacity 0.2s;
+}
+
+/* Mientras se guarda un cambio de estado. */
+.tarjeta-cita[aria-busy='true'] {
+  opacity: 0.6;
+}
+
+.tarjeta-cita__encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tarjeta-cita__hora {
+  font-weight: 500;
+}
+
+.tarjeta-cita__estado {
+  border-radius: 999px;
+  padding: 2px 12px;
+  background: var(--color-sand);
+  font-size: 13px;
+}
+
+.tarjeta-cita__nombre {
+  font-size: 24px;
+}
+
+.tarjeta-cita__servicio {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  color: var(--color-muted);
+}
+
+.tarjeta-cita__precio {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+
+.tarjeta-cita__alerta {
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--color-rose) 45%, transparent);
+  font-size: 14px;
+}
+
+.tarjeta-cita__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  border-top: 1px solid var(--color-line);
+  padding-top: 12px;
+}
+
+.tarjeta-cita__whatsapp {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-right: auto;
+  font-size: 15px;
+}
+
+/* La accion principal (confirmar o marcar atendida) va rellena. */
+.tarjeta-cita__accion--confirmada,
+.tarjeta-cita__accion--atendida {
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+}
+
+.tarjeta-cita__accion--cancelada {
+  border-color: var(--color-line);
+  color: var(--color-muted);
+}
+
+/* Cada estado marca el borde izquierdo y la etiqueta con su color. */
+.tarjeta-cita--pendiente {
+  border-left-color: var(--color-gold);
+}
+
+.tarjeta-cita--pendiente .tarjeta-cita__estado {
+  background: var(--color-gold);
+  color: var(--color-on-gold);
+}
+
+.tarjeta-cita--confirmada {
+  border-left-color: var(--color-ink);
+}
+
+.tarjeta-cita--confirmada .tarjeta-cita__estado {
+  background: var(--color-ink);
+  color: var(--color-background);
+}
+
+.tarjeta-cita--atendida {
+  background: var(--color-background);
+}
+
+/* Canceladas y vencidas ya no ocupan la hora: se ven apagadas. */
+.tarjeta-cita--cancelada,
+.tarjeta-cita--vencida {
+  background: var(--color-background);
+  color: var(--color-muted);
+}
+
+.tarjeta-cita--cancelada .tarjeta-cita__nombre,
+.tarjeta-cita--vencida .tarjeta-cita__nombre {
+  text-decoration: line-through;
+}
+
 /* ----- Cargando y error de cada seccion ----- */
 
 .estado-consulta {
@@ -362,6 +608,11 @@
 
   .login__tarjeta {
     padding: 32px 20px 28px;
+  }
+
+  /* WhatsApp en su propia fila: los botones de la cita quedan juntos debajo. */
+  .tarjeta-cita__whatsapp {
+    flex-basis: 100%;
   }
 }
 

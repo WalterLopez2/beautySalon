@@ -1,4 +1,6 @@
-// Una cita de la agenda con los botones que su estado permite.
+// Una cita de la agenda con los botones que su estado permite. El estado se
+// pasa como clase (tarjeta-cita--pendiente, --confirmada...) para que el CSS
+// le de su color sin logica en la vista.
 
 import type { EstadoCita } from '../../../compartido/tipos/api.ts'
 import type { CitaDelPanel } from '../../features/agenda/CitaDelPanel.ts'
@@ -21,27 +23,39 @@ export function TarjetaDeCita({ item, enProceso, onCambiarEstado }: Props) {
   const { cita, clienta } = item
 
   return (
-    <article aria-busy={enProceso}>
-      <p>{cita.franja.etiqueta()}</p>
-      <h3>{item.nombreEscrito}</h3>
+    <article className={`tarjeta-cita tarjeta-cita--${item.estado}`} aria-busy={enProceso}>
+      <div className="tarjeta-cita__encabezado">
+        <p className="tarjeta-cita__hora">{cita.franja.etiqueta()}</p>
+        <p className="tarjeta-cita__estado">{cita.etiquetaDeEstado()}</p>
+      </div>
+
+      <h3 className="tarjeta-cita__nombre">{item.nombreEscrito}</h3>
+      <p className="tarjeta-cita__servicio">
+        {cita.servicioNombre}
+        <span className="tarjeta-cita__precio">{cita.precioFormateado()}</span>
+      </p>
+
       {item.nombreDistintoAlDeLaFicha() && (
-        <p>
+        <p className="tarjeta-cita__alerta">
           <strong>Ojo:</strong> ese telefono esta registrado a nombre de {clienta.nombre}.
         </p>
       )}
       {item.telefonoSinVerificar() && (
-        <p>Telefono sin verificar: escribele por WhatsApp antes de confirmar.</p>
+        <p className="tarjeta-cita__alerta">Telefono sin verificar: escribele por WhatsApp antes de confirmar.</p>
       )}
-      <p>{cita.servicioNombre}</p>
-      <p>{cita.precioFormateado()}</p>
-      <p>{cita.etiquetaDeEstado()}</p>
-      <a href={clienta.enlaceDeWhatsApp()} target="_blank" rel="noreferrer">
-        Escribir por WhatsApp
-      </a>
 
-      <div>
+      <div className="tarjeta-cita__acciones">
+        <a className="tarjeta-cita__whatsapp" href={clienta.enlaceDeWhatsApp()} target="_blank" rel="noreferrer">
+          Escribir por WhatsApp
+        </a>
         {item.accionesDisponibles().map((estado) => (
-          <button key={estado} type="button" disabled={enProceso} onClick={() => onCambiarEstado(estado)}>
+          <button
+            key={estado}
+            type="button"
+            className={`tarjeta-cita__accion tarjeta-cita__accion--${estado}`}
+            disabled={enProceso}
+            onClick={() => onCambiarEstado(estado)}
+          >
             {TEXTO_DE_ACCION[estado]}
           </button>
         ))}

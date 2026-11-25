@@ -12,7 +12,7 @@ interface Props {
 
 export function SelectorDeFecha({ fecha, onCambiar, paso = 1 }: Props) {
   return (
-    <div role="group" aria-label="Elegir fecha">
+    <div className="selector-fecha" role="group" aria-label="Elegir fecha">
       <button type="button" onClick={() => onCambiar(sumarDias(fecha, -paso))}>
         Anterior
       </button>
@@ -23,12 +23,13 @@ export function SelectorDeFecha({ fecha, onCambiar, paso = 1 }: Props) {
         Siguiente
       </button>
       <input
+        className="selector-fecha__calendario"
         type="date"
         aria-label="Fecha"
         value={fecha}
         onChange={(evento) => evento.target.value && onCambiar(evento.target.value)}
       />
-      <p>{formatearFecha(fecha)}</p>
+      <p className="selector-fecha__texto">{formatearFecha(fecha)}</p>
     </div>
   )
 }

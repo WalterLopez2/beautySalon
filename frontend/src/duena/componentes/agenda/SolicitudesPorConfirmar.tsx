@@ -13,18 +13,22 @@ interface Props {
 
 export function SolicitudesPorConfirmar({ solicitudes, cargando, error, onReintentar, onVerDia }: Props) {
   return (
-    <section aria-labelledby="titulo-por-confirmar">
+    <section className="solicitudes" aria-labelledby="titulo-por-confirmar">
       <h3 id="titulo-por-confirmar">Solicitudes por confirmar</h3>
-      <p>Las que no confirmes dentro del plazo que pusiste en Horario liberan su hora.</p>
+      <p className="solicitudes__ayuda">
+        Las que no confirmes dentro del plazo que pusiste en Horario liberan su hora.
+      </p>
 
       <EstadoDeConsulta cargando={cargando} error={error} onReintentar={onReintentar}>
         {solicitudes.length === 0 ? (
-          <p>No tienes solicitudes pendientes.</p>
+          <p className="solicitudes__ayuda">No tienes solicitudes pendientes.</p>
         ) : (
-          <ul>
+          <ul className="solicitudes__lista">
             {solicitudes.map((item) => (
-              <li key={item.id}>
-                {item.nombreEscrito} - {item.cita.resumen()}{' '}
+              <li key={item.id} className="solicitudes__item">
+                <span>
+                  <strong className="solicitudes__nombre">{item.nombreEscrito}</strong> {item.cita.resumen()}
+                </span>
                 <button type="button" onClick={() => onVerDia(item.cita.fecha)}>
                   Ver ese dia
                 </button>

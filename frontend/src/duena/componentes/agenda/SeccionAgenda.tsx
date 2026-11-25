@@ -39,21 +39,31 @@ export function SeccionAgenda({ fecha, onCambiarFecha }: Props) {
       <SelectorDeFecha fecha={fecha} onCambiar={onCambiarFecha} />
 
       <EstadoDeConsulta cargando={cargando} error={error} onReintentar={recargar}>
-        <dl>
-          <dt>Por confirmar</dt>
-          <dd>{agenda.porConfirmar().length}</dd>
-          <dt>Cobrado</dt>
-          <dd>{formatearLempiras(agenda.ingresoCobrado())}</dd>
-          <dt>Esperado</dt>
-          <dd>{formatearLempiras(agenda.ingresoEsperado())}</dd>
+        <dl className="resumen-del-dia">
+          <div className="resumen-del-dia__dato">
+            <dt>Por confirmar</dt>
+            <dd>{agenda.porConfirmar().length}</dd>
+          </div>
+          <div className="resumen-del-dia__dato">
+            <dt>Cobrado</dt>
+            <dd>{formatearLempiras(agenda.ingresoCobrado())}</dd>
+          </div>
+          <div className="resumen-del-dia__dato">
+            <dt>Esperado</dt>
+            <dd>{formatearLempiras(agenda.ingresoEsperado())}</dd>
+          </div>
         </dl>
 
-        {errorDeAccion && <p role="alert">{errorDeAccion}</p>}
+        {errorDeAccion && (
+          <p className="agenda__error" role="alert">
+            {errorDeAccion}
+          </p>
+        )}
 
         {agenda.estaVacia() ? (
-          <p>No hay citas este dia.</p>
+          <p className="agenda__vacia">No hay citas este dia.</p>
         ) : (
-          <ol>
+          <ol className="agenda__citas">
             {agenda.todas().map((item) => (
               <li key={item.id}>
                 <TarjetaDeCita

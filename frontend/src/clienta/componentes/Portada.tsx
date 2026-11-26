@@ -3,6 +3,7 @@
 
 import type { SalonEnPantalla } from '../hooks/useSalon.ts'
 import { ContactoDelSalon } from './ContactoDelSalon.tsx'
+import { EstadoDelSalonAhora } from './EstadoDelSalonAhora.tsx'
 import { SECCIONES } from './secciones.ts'
 
 const TITULO_SIN_INFORMACION = 'Reservas en linea'
@@ -15,6 +16,7 @@ export function Portada({ salonEnPantalla }: Props) {
   const { salon, cargando } = salonEnPantalla
   const cerrado = salon !== null && !salon.recibeReservas()
   const titulo = salon?.eslogan || salon?.nombre || TITULO_SIN_INFORMACION
+  const estadoAhora = salon?.estadoAhora()
 
   return (
     <header className="portada" aria-busy={cargando}>
@@ -22,6 +24,7 @@ export function Portada({ salonEnPantalla }: Props) {
         {/* Mientras carga no se muestra un titulo que luego cambiaria. */}
         <h1 className="portada__eslogan">{cargando ? '\u00a0' : titulo}</h1>
         {salon?.descripcion && <p className="portada__descripcion">{salon.descripcion}</p>}
+        {estadoAhora && salon?.plazo && <EstadoDelSalonAhora estado={estadoAhora} hoy={salon.plazo.primeraFecha} />}
 
         {cerrado && (
           <div className="portada__cerrado" role="status">

@@ -7,6 +7,7 @@ import type { FormEvent } from 'react'
 import { ListaDeErrores } from '../../../compartido/componentes/ListaDeErrores.tsx'
 import type { Servicio } from '../../../compartido/dominio/Servicio.ts'
 import type { PlazoDeReserva } from '../../features/agendamiento/PlazoDeReserva.ts'
+import type { HorarioDeAtencion } from '../../features/salon/HorarioDeAtencion.ts'
 import { useAgendaDelDia } from '../../hooks/useAgendaDelDia.ts'
 import type { CatalogoEnPantalla } from '../../hooks/useCatalogoServicios.ts'
 import { useAgendamiento } from '../../hooks/useAgendamiento.ts'
@@ -83,7 +84,12 @@ function ContenidoDeReservar({ catalogoEnPantalla, salonEnPantalla }: Props) {
       <aside className="reservar__lateral">
         <TablaDeHorario horario={salon.horario} hoy={salon.plazo.primeraFecha} />
       </aside>
-      <FormularioDeCita servicios={catalogo.todos()} plazo={salon.plazo} telefono={salon.telefono} />
+      <FormularioDeCita
+        servicios={catalogo.todos()}
+        plazo={salon.plazo}
+        horario={salon.horario}
+        telefono={salon.telefono}
+      />
     </div>
   )
 }
@@ -91,10 +97,11 @@ function ContenidoDeReservar({ catalogoEnPantalla, salonEnPantalla }: Props) {
 interface PropsDelFormulario {
   servicios: readonly Servicio[]
   plazo: PlazoDeReserva
+  horario: HorarioDeAtencion
   telefono: string | null
 }
 
-function FormularioDeCita({ servicios, plazo, telefono }: PropsDelFormulario) {
+function FormularioDeCita({ servicios, plazo, horario, telefono }: PropsDelFormulario) {
   const agendamiento = useAgendamiento(plazo)
   const { solicitud, citaConfirmada, enviando, errores } = agendamiento
   // Vive aqui, y no en el paso de la hora, para poder refrescarla si falla el envio.
@@ -135,7 +142,12 @@ function FormularioDeCita({ servicios, plazo, telefono }: PropsDelFormulario) {
       </PasoDelFormulario>
 
       <PasoDelFormulario numero={2} titulo="Elige el dia">
-        <SelectorDeFechaDeCita fecha={solicitud.fecha} plazo={plazo} alElegir={agendamiento.elegirFecha} />
+        <SelectorDeFechaDeCita
+          fecha={solicitud.fecha}
+          plazo={plazo}
+          horario={horario}
+          alElegir={agendamiento.elegirFecha}
+        />
       </PasoDelFormulario>
 
       <PasoDelFormulario numero={3} titulo="Elige la hora">

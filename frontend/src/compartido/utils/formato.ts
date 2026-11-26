@@ -18,6 +18,11 @@ const FECHA_LARGA = new Intl.DateTimeFormat(LOCALE, {
   month: 'long',
 })
 
+const MES_Y_ANIO = new Intl.DateTimeFormat(LOCALE, {
+  month: 'long',
+  year: 'numeric',
+})
+
 const HORA_CORTA = new Intl.DateTimeFormat(LOCALE, {
   hour: 'numeric',
   minute: '2-digit',
@@ -29,6 +34,11 @@ export function formatearLempiras(monto: number): string {
 
 export function formatearFecha(fecha: string): string {
   return FECHA_LARGA.format(aFechaLocal(fecha))
+}
+
+// "2026-11-24" -> "noviembre de 2026".
+export function formatearMes(fecha: string): string {
+  return MES_Y_ANIO.format(aFechaLocal(fecha))
 }
 
 export function formatearHora(hora: string): string {

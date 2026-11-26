@@ -59,3 +59,18 @@ export function diasDeLaSemana(fecha: string): string[] {
   const lunes = inicioDeSemana(fecha)
   return Array.from({ length: DIAS_POR_SEMANA }, (_, dia) => sumarDias(lunes, dia))
 }
+
+// Primer dia del mes de esa fecha: "2026-11-24" -> "2026-11-01".
+export function inicioDelMes(fecha: string): string {
+  return `${fecha.slice(0, 7)}-01`
+}
+
+// Primer dia del mes que esta `meses` meses antes o despues.
+export function sumarMeses(fecha: string, meses: number): string {
+  const inicio = aFechaLocal(inicioDelMes(fecha))
+  return aFechaISO(new Date(inicio.getFullYear(), inicio.getMonth() + meses, 1))
+}
+
+export function finDelMes(fecha: string): string {
+  return sumarDias(sumarMeses(fecha, 1), -1)
+}

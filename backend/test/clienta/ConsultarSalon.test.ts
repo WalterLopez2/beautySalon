@@ -23,9 +23,10 @@ function consultar(semanal: { configuracion: ConfiguracionDelSalon; dias: Horari
 }
 
 describe('ConsultarSalon', () => {
-  it('"hoy" es el del salon y el plazo es el de la duena', async () => {
+  it('"hoy" y "ahora" son los del salon y el plazo es el de la duena', async () => {
     expect((await consultar({ configuracion, dias: [lunes] })).reservas).toEqual({
       hoy: '2026-11-22',
+      ahora: '22:30',
       ultimaFecha: '2026-12-02',
       horasParaConfirmar: 8,
     });

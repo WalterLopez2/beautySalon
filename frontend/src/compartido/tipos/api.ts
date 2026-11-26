@@ -41,6 +41,7 @@ export interface InformacionDelSalonDTO {
 
 export interface PlazoDeReservaDTO {
   hoy: string // YYYY-MM-DD en la zona del salon
+  ahora: string // HH:MM en la zona del salon
   ultimaFecha: string
   horasParaConfirmar: number
 }

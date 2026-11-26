@@ -17,7 +17,8 @@ export interface DiaDeAtencionPublico {
 export interface SalonPublico {
   informacion: InformacionDelSalon | null;
   // null = no recibe reservas (sin configurar o sin ningun dia abierto).
-  reservas: { hoy: string; ultimaFecha: string; horasParaConfirmar: number } | null;
+  // `hoy` y `ahora` son la fecha y la hora del salon, no las del celular.
+  reservas: { hoy: string; ahora: string; ultimaFecha: string; horasParaConfirmar: number } | null;
   // Solo los dias que abre, de lunes a domingo. Vacio = sin horario.
   diasDeAtencion: DiaDeAtencionPublico[];
 }
@@ -42,10 +43,15 @@ export class ConsultarSalon {
     if (!semanal || semanal.dias.length === 0) return { informacion, reservas: null, diasDeAtencion: [] };
 
     const { zonaHoraria, diasDeAnticipacion, horasParaConfirmar } = semanal.configuracion;
-    const hoy = momentoEn(zonaHoraria, this.reloj()).fecha;
+    const { fecha: hoy, minuto } = momentoEn(zonaHoraria, this.reloj());
     return {
       informacion,
-      reservas: { hoy, ultimaFecha: sumarDias(hoy, diasDeAnticipacion), horasParaConfirmar },
+      reservas: {
+        hoy,
+        ahora: minutosAHora(minuto),
+        ultimaFecha: sumarDias(hoy, diasDeAnticipacion),
+        horasParaConfirmar,
+      },
       diasDeAtencion: aDiasPublicos(semanal.dias),
     };
   }

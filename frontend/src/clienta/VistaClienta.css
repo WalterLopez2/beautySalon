@@ -966,7 +966,7 @@
   border-radius: 50%;
   background: var(--color-whatsapp);
   color: #fff;
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-ink) 25%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-sombra) 25%, transparent);
   transition: transform 0.2s;
 }
 

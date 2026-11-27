@@ -235,7 +235,7 @@
   border-radius: 20px;
   padding: 40px 32px 36px;
   background: var(--color-surface);
-  box-shadow: 0 18px 48px color-mix(in srgb, var(--color-ink) 10%, transparent);
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--color-sombra) 10%, transparent);
 }
 
 .login__titulo {

@@ -1,7 +1,8 @@
 :root {
   font-family: 'Jost', 'Segoe UI', system-ui, sans-serif;
-  color: #4a3324;
-  background: #fffbf0;
+  color-scheme: light dark;
+  color: var(--color-ink);
+  background: var(--color-background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,10 +19,28 @@
   --color-line: #e4d6b8;
   --color-abierto: #5fa36b;
   --color-whatsapp: #25a45a;
+  --color-sombra: #4a3324;
 
   --fuente-texto: 'Jost', 'Segoe UI', system-ui, sans-serif;
   --fuente-titulos: 'Cormorant Garamond', 'Palatino Linotype', Palatino, Georgia, serif;
   --fuente-firma: 'Pinyon Script', 'Segoe Script', 'Apple Chancery', cursive;
+}
+
+/* Modo oscuro: se activa solo cuando el celular o la compu lo usan. Solo
+   cambian los colores; las vistas ya los toman de aqui y no se tocan. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #231a13;
+    --color-surface: #2d221a;
+    --color-sand: #3a2c21;
+    --color-ink: #f3e9d6;
+    --color-muted: #c4b199;
+    --color-gold: #d3b057;
+    --color-on-gold: #2a1d12;
+    --color-rose: #5a3f3b;
+    --color-line: #4d3b2c;
+    --color-sombra: #000;
+  }
 }
 
 html {

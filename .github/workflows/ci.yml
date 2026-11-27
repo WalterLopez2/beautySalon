@@ -37,10 +37,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Las pruebas usan dobles: no necesitan PostgreSQL.
-      - run: pnpm test
+      - run: pnpm --filter backend test
 
   frontend:
-    name: Frontend (tipos, lint y build)
+    name: Frontend (tipos, lint, pruebas y build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,4 +54,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # `build` ya incluye la revision de tipos (tsc -b) antes de empaquetar.
       - run: pnpm --filter frontend lint
+      # Pruebas del dominio: logica pura, sin navegador ni backend.
+      - run: pnpm --filter frontend test
       - run: pnpm --filter frontend build

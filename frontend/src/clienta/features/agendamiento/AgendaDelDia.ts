@@ -80,10 +80,6 @@ export class AgendaDelDia {
     return this.franjasDisponiblesPara(duracionMin).map((franja) => franja.inicio)
   }
 
-  sinEspacioPara(duracionMin: number): boolean {
-    return this.franjasDisponiblesPara(duracionMin).length === 0
-  }
-
   private cabeEnElHorario(franja: Franja, horario: HorarioDeAtencion): boolean {
     return (
       franja.inicioEnMinutos() >= horaAMinutos(horario.apertura) &&

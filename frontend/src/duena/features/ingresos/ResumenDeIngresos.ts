@@ -39,10 +39,6 @@ export class ResumenDeIngresos {
     return sumar(this.atendidas)
   }
 
-  totalDelDia(fecha: string): number {
-    return sumar(this.atendidasEl(fecha))
-  }
-
   // Siempre siete filas, aunque un dia no haya tenido ventas (para graficar).
   porDia(): IngresoDelDia[] {
     return this.dias.map((fecha) => {

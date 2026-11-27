@@ -3,7 +3,6 @@
 // se devuelve una agenda nueva para que React redibuje sin sorpresas.
 
 import type { EstadoCita } from '../../../compartido/tipos/api.ts'
-import { horaAMinutos } from '../../../compartido/utils/hora.ts'
 import type { CitaDelPanel } from './CitaDelPanel.ts'
 
 export class AgendaDelPanel {
@@ -36,21 +35,6 @@ export class AgendaDelPanel {
   // Lo que la duena tiene que revisar: solicitudes que nadie ha confirmado.
   porConfirmar(): CitaDelPanel[] {
     return this.conEstado('pendiente')
-  }
-
-  // Sin canceladas ni vencidas: es lo que de verdad va a pasar en el dia.
-  activas(): CitaDelPanel[] {
-    return this.citas.filter((item) => item.cita.ocupaSuHorario())
-  }
-
-  // La siguiente clienta confirmada que todavia no termina, a partir de HH:MM.
-  proximaDesde(hora: string): CitaDelPanel | null {
-    const minuto = horaAMinutos(hora)
-    return (
-      this.citas.find(
-        (item) => item.cita.estaConfirmada() && item.cita.franja.finEnMinutos() > minuto,
-      ) ?? null
-    )
   }
 
   ingresoCobrado(): number {

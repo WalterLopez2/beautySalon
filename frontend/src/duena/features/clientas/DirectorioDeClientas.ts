@@ -23,10 +23,6 @@ export class DirectorioDeClientas {
     return this.clientas
   }
 
-  cantidad(): number {
-    return this.clientas.length
-  }
-
   estaVacio(): boolean {
     return this.clientas.length === 0
   }

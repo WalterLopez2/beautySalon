@@ -3,7 +3,6 @@
 
 import type { ServicioDTO } from '../tipos/api.ts'
 import { formatearDuracion, formatearLempiras } from '../utils/formato.ts'
-import { normalizarTexto } from '../utils/texto.ts'
 
 export class Servicio {
   readonly id: number
@@ -63,15 +62,5 @@ export class Servicio {
 
   esDeCategoria(categoria: string): boolean {
     return this.categoria.toLocaleLowerCase() === categoria.trim().toLocaleLowerCase()
-  }
-
-  // Se usa para el buscador del catalogo publico.
-  coincideCon(texto: string): boolean {
-    const busqueda = normalizarTexto(texto)
-    if (!busqueda) return true
-
-    return [this.nombre, this.descripcion, this.categoria]
-      .map(normalizarTexto)
-      .some((campo) => campo.includes(busqueda))
   }
 }

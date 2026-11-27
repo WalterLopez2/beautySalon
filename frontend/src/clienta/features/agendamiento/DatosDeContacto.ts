@@ -46,10 +46,6 @@ export class DatosDeContacto {
     return errores
   }
 
-  sonValidos(): boolean {
-    return this.errores().length === 0
-  }
-
   aDTO(): ContactoDTO {
     return {
       nombre: this.nombre.trim(),

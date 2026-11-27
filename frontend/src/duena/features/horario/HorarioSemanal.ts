@@ -114,10 +114,6 @@ export class HorarioSemanal {
     return this.dias.has(dia)
   }
 
-  cantidadDeDiasAbiertos(): number {
-    return this.dias.size
-  }
-
   // ----- Cambios (cada uno devuelve un horario nuevo) -----
 
   conHorasDel(dia: number, horas: HorasDelDia): HorarioSemanal {

@@ -11,16 +11,6 @@ export class ErrorDeApi extends Error {
     this.estado = estado
   }
 
-  // 0 = no hubo respuesta del servidor (sin internet, API apagada).
-  esDeConexion(): boolean {
-    return this.estado === 0
-  }
-
-  // El dato enviado por la clienta esta mal: hay que corregir el formulario.
-  esDeDatos(): boolean {
-    return this.estado >= 400 && this.estado < 500
-  }
-
   esDelServidor(): boolean {
     return this.estado >= 500
   }

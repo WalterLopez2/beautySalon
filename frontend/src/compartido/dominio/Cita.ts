@@ -69,30 +69,12 @@ export class Cita {
     return this.estado === 'cancelada'
   }
 
-  ocupaSuHorario(): boolean {
-    return this.estado !== 'cancelada' && this.estado !== 'vencida'
-  }
-
   fueAtendida(): boolean {
     return this.estado === 'atendida'
   }
 
   puedePasarA(estado: EstadoCita): boolean {
     return TRANSICIONES_PERMITIDAS[this.estado].includes(estado)
-  }
-
-  // Solo se cancela lo que aun no se atendio.
-  sePuedeCancelar(): boolean {
-    return this.puedePasarA('cancelada')
-  }
-
-  sePuedeConfirmar(): boolean {
-    return this.puedePasarA('confirmada')
-  }
-
-  // La duena marca "atendida" cuando ya realizo el servicio y lo cobro.
-  sePuedeMarcarAtendida(): boolean {
-    return this.puedePasarA('atendida')
   }
 
   // Misma regla que `totalIngresos` del backend: solo lo atendido es ingreso.

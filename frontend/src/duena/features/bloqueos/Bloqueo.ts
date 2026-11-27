@@ -34,10 +34,6 @@ export class Bloqueo {
     return this.desde === this.hasta
   }
 
-  cubreLaFecha(fecha: string): boolean {
-    return this.desde <= fecha && fecha <= this.hasta
-  }
-
   // El tramo bloqueado como franja, para dibujarlo en la agenda del dia.
   franja(): Franja | null {
     if (this.esDeDiaCompleto()) return null

@@ -4,6 +4,11 @@
 import type { ServicioDTO } from '../tipos/api.ts'
 import { Servicio } from './Servicio.ts'
 
+export interface GrupoDeServicios {
+  categoria: string
+  servicios: readonly Servicio[]
+}
+
 export class CatalogoServicios {
   private readonly servicios: readonly Servicio[]
 
@@ -46,6 +51,14 @@ export class CatalogoServicios {
 
   categorias(): string[] {
     return [...new Set(this.servicios.map((servicio) => servicio.categoria))].sort()
+  }
+
+  // Un grupo por categoria, en el mismo orden que categorias().
+  agrupadosPorCategoria(): GrupoDeServicios[] {
+    return this.categorias().map((categoria) => ({
+      categoria,
+      servicios: this.filtrarPorCategoria(categoria).todos(),
+    }))
   }
 
   filtrarPorCategoria(categoria: string): CatalogoServicios {

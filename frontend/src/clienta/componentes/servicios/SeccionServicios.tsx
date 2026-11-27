@@ -1,5 +1,5 @@
-// Seccion "Servicios" de la pagina publica: muestra el catalogo con su precio y
-// duracion, y deja filtrarlo por categoria. El catalogo llega por props (lo
+// Seccion "Servicios" de la pagina publica: muestra el catalogo como una carta,
+// agrupado por categoria, con su precio y duracion, y deja filtrarlo. El catalogo llega por props (lo
 // carga la vista una sola vez); esta seccion solo decide que mostrar segun el
 // estado (cargando, error, vacio).
 
@@ -8,7 +8,7 @@ import type { CatalogoEnPantalla } from '../../hooks/useCatalogoServicios.ts'
 import { AvisoConReintento } from '../AvisoConReintento.tsx'
 import { SECCIONES } from '../secciones.ts'
 import { FiltroDeCategorias } from './FiltroDeCategorias.tsx'
-import { TarjetaDeServicio } from './TarjetaDeServicio.tsx'
+import { ServicioDeLaCarta } from './ServicioDeLaCarta.tsx'
 
 interface Props {
   catalogoEnPantalla: CatalogoEnPantalla
@@ -56,9 +56,16 @@ function ContenidoDelCatalogo({ catalogo, cargando, error, recargar }: CatalogoE
         alSeleccionar={setCategoria}
       />
 
-      <div className="cuadricula-servicios">
-        {visibles.todos().map((servicio) => (
-          <TarjetaDeServicio key={servicio.id} servicio={servicio} />
+      <div className="carta">
+        {visibles.agrupadosPorCategoria().map(({ categoria, servicios }) => (
+          <section key={categoria} className="carta__grupo" aria-label={categoria}>
+            <h3 className="carta__categoria">{categoria}</h3>
+            <ul className="carta__servicios">
+              {servicios.map((servicio) => (
+                <ServicioDeLaCarta key={servicio.id} servicio={servicio} />
+              ))}
+            </ul>
+          </section>
         ))}
       </div>
     </>

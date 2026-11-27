@@ -290,59 +290,73 @@
   color: var(--color-background);
 }
 
-.cuadricula-servicios {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
-  gap: 16px;
+/* La carta: grupos por categoria en dos columnas; cada servicio en una linea
+   con puntos hasta la duracion y el precio, como la carta de un salon. */
+.carta {
+  columns: 2 340px;
+  column-gap: 48px;
 }
 
-.tarjeta-servicio {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border: 1px solid var(--color-line);
-  border-radius: 18px;
-  padding: 22px 20px 20px;
-  background: var(--color-surface);
-  transition: transform 0.25s, border-color 0.25s;
+.carta__grupo {
+  break-inside: avoid; /* un grupo no se parte entre dos columnas */
+  margin-bottom: 32px;
 }
 
-.tarjeta-servicio:hover {
-  border-color: var(--color-gold);
-  transform: translateY(-4px);
-}
-
-.tarjeta-servicio__categoria {
+.carta__categoria {
+  margin-bottom: 4px;
   color: var(--color-gold);
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font: 400 13px var(--fuente-texto);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.tarjeta-servicio__nombre {
-  font-size: 24px;
-}
-
-.tarjeta-servicio__descripcion {
+.carta__servicios {
   margin: 0;
-  color: var(--color-muted);
-  font-size: 15px;
+  padding: 0;
+  list-style: none;
 }
 
-.tarjeta-servicio__detalle {
+.carta__servicio {
+  border-bottom: 1px solid var(--color-line);
+  padding: 14px 0;
+}
+
+.carta__linea {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  margin-top: auto;
-  padding-top: 12px;
-  color: var(--color-muted);
-  font-size: 14px;
+  gap: 10px;
 }
 
-.tarjeta-servicio__precio {
+.carta__nombre {
+  margin: 0;
+  font: 500 22px/1.25 var(--fuente-titulos);
+}
+
+/* La linea punteada ocupa el espacio que sobra entre el nombre y el precio. */
+.carta__puntos {
+  flex: 1;
+  min-width: 16px;
+  border-bottom: 1px dotted var(--color-muted);
+  transform: translateY(-5px);
+}
+
+.carta__detalle {
+  flex-shrink: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.carta__precio {
   color: var(--color-ink);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 500;
+}
+
+.carta__descripcion {
+  margin: 4px 0 0;
+  color: var(--color-muted);
+  font-size: 15px;
 }
 
 /* ----- Reservar ----- */

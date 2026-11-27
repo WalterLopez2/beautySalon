@@ -3,6 +3,7 @@
 // agrega como componente en `clienta/componentes` y toma sus datos de los
 // hooks de `clienta/hooks`.
 
+import { BotonDeWhatsApp } from './componentes/BotonDeWhatsApp.tsx'
 import { Encabezado } from './componentes/Encabezado.tsx'
 import { PieDePagina } from './componentes/PieDePagina.tsx'
 import { Portada } from './componentes/Portada.tsx'
@@ -37,6 +38,7 @@ export default function VistaClienta() {
         <SeccionMisCitas />
       </main>
       <PieDePagina salon={salon} />
+      <BotonDeWhatsApp telefono={salon?.telefono ?? null} />
     </div>
   )
 }

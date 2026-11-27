@@ -889,21 +889,89 @@
 /* ----- Pie de pagina ----- */
 
 .pie {
-  padding: 48px 24px;
+  /* Abajo queda espacio para que el boton de WhatsApp no tape el pie. */
+  padding: 56px 0 96px;
   border-top: 1px solid var(--color-line);
+  background: var(--color-sand);
   color: var(--color-muted);
-  font-size: 14px;
-  text-align: center;
+  font-size: 15px;
 }
 
 .pie p {
   margin: 0;
 }
 
+.pie__columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 32px;
+}
+
+.pie__columna {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 6px;
+}
+
 .pie__marca {
   display: block;
-  font: 400 34px var(--fuente-firma);
+  font: 400 34px/1.2 var(--fuente-firma);
   color: var(--color-gold);
+}
+
+.pie__titulo {
+  margin: 0 0 4px;
+  color: var(--color-ink);
+  font: 400 13px var(--fuente-texto);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pie__enlaces {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pie__enlaces a,
+.pie__enlace {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--color-muted);
+}
+
+.pie__enlaces a {
+  text-decoration: none;
+}
+
+.pie__enlaces a:hover,
+.pie__enlace:hover {
+  color: var(--color-gold);
+}
+
+/* ----- Boton flotante de WhatsApp ----- */
+
+.boton-whatsapp {
+  position: fixed;
+  right: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px)); /* sobre la barra del iPhone */
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-whatsapp);
+  color: #fff;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-ink) 25%, transparent);
+  transition: transform 0.2s;
+}
+
+.boton-whatsapp:hover {
+  transform: scale(1.06);
 }
 
 /* ----- Pantallas chicas ----- */
@@ -998,7 +1066,7 @@
   }
 
   .pie {
-    padding: 32px 16px;
+    padding: 40px 0 96px;
   }
 }
 
